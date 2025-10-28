@@ -20,4 +20,6 @@ urlpatterns = [
     #    Esto es útil para referenciar la URL desde otras partes de Django (ej: en el HTML
     #    al usar {% url 'consulta_clima' %}).
     path('', views.clima_view, name='consulta_clima'), 
+    # NUEVA RUTA: Para mostrar los resultados detallados
+    path('resultados/', views.resultados_detalle_view, name='resultados_detalle'), 
 ]

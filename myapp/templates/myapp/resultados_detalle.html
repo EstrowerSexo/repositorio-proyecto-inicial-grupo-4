@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLIMA CHILE - Resultados Detalle</title>
+    
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> 
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* Ajuste del card para tener más espacio para los gráficos y tablas */
+        .card-detalle {
+            background: rgba(255, 255, 255, 0.2); 
+            backdrop-filter: blur(10px); 
+            padding: 30px; 
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: left; 
+            max-width: 900px; /* Más ancho que el formulario inicial */
+            width: 90%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .header-detalle {
+            text-align: center;
+        }
+        
+        /* Contenedor principal para las dos columnas (Mapa y Estadísticas) */
+        .content-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr; 
+            gap: 30px;
+        }
+
+        /* Estilo para el espacio reservado para el mapa */
+        .map-section {
+            border: 1px solid #ccc; 
+            height: 350px;
+            background-color: #f8f8f8;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            color: #666;
+            border-radius: 10px;
+        }
+
+        .stats-section h2 {
+            font-size: 1.8rem;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        
+        /* Estilo para las tarjetas de métricas clave (T° Máxima, Precipitación) */
+        .key-metric {
+            background-color: rgba(0, 123, 255, 0.1); /* Azul claro */
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        /* Botón de Volver */
+        .back-button {
+            width: 100%;
+            padding: 15px;
+            margin-top: 20px;
+            background-color: #6c757d; /* Gris */
+            background-image: linear-gradient(to top, #5a6268, #6c757d);
+            color: white;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none; /* Quitar subrayado del <a> */
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Media query para hacer el diseño responsivo en pantallas pequeñas */
+        @media (max-width: 800px) {
+            .content-grid {
+                grid-template-columns: 1fr; /* Una columna en lugar de dos */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-image"></div>
+    
+    <div class="card-container">
+        <div class="card-detalle"> 
+            
+            <div class="header-detalle">
+                <h1>CLIMA CHILE - Resultados Detalle</h1>
+                <p class="subtitle">Análisis Anual - Región de **{{ data.region_nombre }}** ({{ data.año }})</p>
+                <hr>
+            </div>
+            
+            <div class="content-grid">
+                
+                <div class="left-column">
+                    <h2>🗺️ Región de Búsqueda</h2>
+                    <div class="map-section">
+                        [Espacio reservado para el Mapa]
+                    </div>
+                    
+                    <h3 style="margin-top: 20px;">Datos Climatológicos Mensuales</h3>
+                    <p style="font-size: 0.9rem; color: #666;">**NOTA:** La implementación detallada de tablas y gráficos mensuales requerirá obtener más datos de la API (ej: promedios mensuales) y librerías de visualización.</p>
+                </div>
+                
+                <div class="stats-section">
+                    <h2>📊 Métricas Clave Anuales</h2>
+                    
+                    <div class="key-metric">
+                        <span>Temperatura Máxima Anual:</span> 
+                        <span>**{{ data.temp_max_anual }} °C**</span>
+                    </div>
+                    
+                    <div class="key-metric">
+                        <span>Precipitación Total Anual:</span> 
+                        <span>**{{ data.precipitacion_total }} mm**</span>
+                    </div>
+
+                    <p style="font-size: 0.8rem; color: #666; text-align: right;">Fuente: {{ data.fuente }}</p>
+                    
+                    <h3 style="margin-top: 30px;">Tablas Estadísticas Anuales</h3>
+                    <p style="font-size: 0.9rem; color: #666;">Aquí se integrarían tablas con promedios, medianas y otros datos de resumen anual.</p>
+
+                </div>
+            </div>
+            
+            <hr>
+
+            <a href="{% url 'consulta_clima' %}" class="back-button">
+                ← Volver a Nueva Consulta
+            </a>
+            
+        </div>
+    </div>
+</body>
+</html>

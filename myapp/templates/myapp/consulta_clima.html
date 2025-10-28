@@ -108,21 +108,8 @@
                 <button type="submit" class="btn-buscar">BUSCAR CLIMA</button>
             </form>
 
-            <!-- ---------------------------------------------------- -->
-            <!-- Mostrar Resultados y Errores de Búsqueda de la API -->
-            <!-- ---------------------------------------------------- -->
-            
-            <!-- Bloque IF: Solo muestra contenido si existe 'resultado_clima' (éxito de API) -->
-            {% if resultado_clima %}
-              <div class="success-result">
-                  <h3>✅ Datos Históricos Encontrados: {{ resultado_clima.region_nombre }} ({{ resultado_clima.año }})</h3>
-                  <p><strong>Temperatura Máxima Anual:</strong> {{ resultado_clima.temp_max_anual }} °C</p>
-                  <p><strong>Precipitación Total Anual:</strong> {{ resultado_clima.precipitacion_total }} mm</p>
-                  <p class="mt-2" style="font-size: 0.75rem;">Fuente: {{ resultado_clima.fuente }}</p>
-              </div>
-            
-            <!-- Bloque ELIF: Si no hubo resultado, pero sí un mensaje_error (API falló o no conectó) -->
-            {% elif mensaje_error %}
+            <!-- Bloque IF: Si no hubo resultado, pero sí un mensaje_error (API falló o no conectó) -->
+            {% if mensaje_error %}
               <div class="error-result">
                 <h3>⚠️ Error de Búsqueda</h3>
                 <p>{{ mensaje_error }}</p>
@@ -132,4 +119,4 @@
         </div>
     </div>
 </body>
-</html>
+</html> 

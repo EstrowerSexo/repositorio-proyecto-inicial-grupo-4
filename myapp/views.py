@@ -2,13 +2,14 @@
 # IMPORTACIONES CLAVE
 # ==============================================================================
 import requests                          # Librería para hacer solicitudes HTTP (necesaria para comunicarnos con la API externa).
-from django.shortcuts import render      # Función estándar para cargar plantillas HTML (templates).
+# MODIFICACIÓN CLAVE: Importamos 'redirect' para poder redirigir a la página de resultados.
+from django.shortcuts import render, redirect # Función estándar para cargar plantillas HTML (templates).
 from datetime import date                # Necesario para obtener el año actual y pre-cargar el formulario.
 
 # Importamos las definiciones de nuestra aplicación (myapp)
 from .forms import ClimaSearchForm       # La clase de formulario que define las reglas de validación (región y año).
 from .models import REGIONES_CHOICES, RegistroClima # REGIONES_CHOICES es la lista de regiones para el menú. RegistroClima
-                                         # se importa para evitar errores, aunque no guardemos datos climáticos.
+                                         # se importa para evitar errores.
 from django.db.models import ObjectDoesNotExist # Importar para manejar errores de búsqueda (mantener por si se usa DB).
 
 
@@ -17,8 +18,7 @@ from django.db.models import ObjectDoesNotExist # Importar para manejar errores 
 # ==============================================================================
 
 # La API de Open-Meteo requiere la latitud (lat) y longitud (lon) de un punto.
-# Mapeamos el código interno de cada región (ARICA, METROPOLITANA, etc.)
-# a un par de coordenadas representativas para la búsqueda histórica.
+# Mapeamos el código interno de cada región a coordenadas representativas.
 REGION_COORDS = {
     'ARICA': (-18.47, -70.29),          # Arica y Parinacota
     'TARAPACA': (-20.22, -70.14),       # Iquique
@@ -40,21 +40,19 @@ REGION_COORDS = {
 
 
 # ==============================================================================
-# VISTA PRINCIPAL (clima_view)
+# VISTA PRINCIPAL (clima_view) - MODIFICADA PARA REDIRECCIÓN
 # ==============================================================================
 
 def clima_view(request):
     """
-    Función que maneja todas las solicitudes a la URL /clima/.
-    1. Si es GET, muestra el formulario.
-    2. Si es POST, valida, consulta la API y muestra el resultado.
+    Maneja el formulario de búsqueda. Si es exitoso, guarda datos en sesión
+    y redirige a resultados_detalle_view.
     """
     
-    # Inicializa el formulario para mostrarlo en el HTML.
-    # El valor inicial del campo 'año' se establece al año actual.
+    # Inicializa el formulario con el año actual por defecto
     form = ClimaSearchForm(initial={'año': date.today().year}) 
     
-    # Variables de estado: se inicializan a None y se llenan solo si hay búsqueda exitosa o error.
+    # Inicializa variables de estado
     resultado_clima = None
     mensaje_error = None
     
@@ -62,32 +60,26 @@ def clima_view(request):
     # Lógica POST (Cuando el usuario presiona 'BUSCAR CLIMA')
     # ----------------------------------------------------
     if request.method == 'POST':
-        # 1. Crear instancia del formulario con los datos enviados por el usuario
         form = ClimaSearchForm(request.POST) 
         
-        # 2. Validar los datos (el formulario ejecuta las reglas de forms.py)
         if form.is_valid():
-            
-            # Si la validación es exitosa, los datos se obtienen de manera segura:
             region_code = form.cleaned_data['region']
             año_buscado = form.cleaned_data['año']
             
-            # 3. Obtener Latitud y Longitud para la API
-            # Usa .get() para evitar errores si el código de región no existe (aunque no debería pasar)
+            # Obtener Latitud y Longitud
             lat, lon = REGION_COORDS.get(region_code)
 
-            # 4. Definir el periodo de un año completo para la API
+            # Definir el periodo de un año completo
             start_date = f"{año_buscado}-01-01"
             end_date = f"{año_buscado}-12-31" 
             
-            # 5. Configurar la Solicitud a la API de Open-Meteo
+            # Configurar la Solicitud a la API de Open-Meteo
             API_URL = "https://archive-api.open-meteo.com/v1/archive"
             params = {
                 'latitude': lat,
                 'longitude': lon,
                 'start_date': start_date,
                 'end_date': end_date,
-                # Solicitamos las variables diarias de T° máxima y Precipitación total
                 'daily': 'temperature_2m_max,precipitation_sum',
                 'timezone': 'auto' 
             }
@@ -95,54 +87,83 @@ def clima_view(request):
             try:
                 # 6. Ejecutar la Solicitud GET
                 response = requests.get(API_URL, params=params)
-                response.raise_for_status() # Verifica si hubo un error HTTP (4xx o 5xx)
-                data = response.json()      # Convierte la respuesta JSON en un diccionario de Python
+                response.raise_for_status() 
+                data = response.json()      
                 
                 # 7. Procesar y Calcular los Resultados
                 if data.get('daily') and data['daily']['temperature_2m_max']:
                     
-                    # Calcula la T° Máxima ANUAL (el valor más alto registrado en ese año)
+                    # Cálculo de métricas resumen
                     temp_max_anual = max(data['daily']['temperature_2m_max'])
-                    
-                    # Calcula la Precipitación Total ANUAL (suma de la precipitación diaria)
                     precipitacion_total = sum(data['daily']['precipitation_sum'])
-                    
-                    # Convierte el código de región (ej: 'RM') a su nombre legible (ej: 'Metropolitana...')
                     region_nombre = dict(REGIONES_CHOICES).get(region_code)
                     
-                    # 8. Guardar el Resultado para el HTML (como un diccionario)
-                    resultado_clima = {
+                    # NUEVO PASO 8: Guardar el resultado en la sesión
+                    # Usamos la sesión de Django para transferir los datos a la próxima vista.
+                    request.session['clima_data'] = {
                         'region_nombre': region_nombre,
+                        'region_code': region_code, 
                         'año': año_buscado,
-                        'temp_max_anual': round(temp_max_anual, 1), # Redondeado a 1 decimal
+                        'temp_max_anual': round(temp_max_anual, 1), 
                         'precipitacion_total': round(precipitacion_total, 1),
                         'fuente': 'Open-Meteo',
+                        # NOTA: Si necesitas los datos mensuales, incluir aquí: 'daily_data': data['daily'],
                     }
+                    
+                    # NUEVO PASO 9: Redirigir al usuario
+                    return redirect('resultados_detalle')
+                    
                 else:
                     mensaje_error = "La API no devolvió datos diarios para este período."
                     
-            # 9. Manejo de Errores de Conexión/API
+            # 10. Manejo de Errores
             except requests.exceptions.HTTPError:
-                # Error cuando la API rechaza la solicitud (ej: año fuera del rango histórico de la API)
                 mensaje_error = f"Error al consultar la API: La solicitud falló. (Revise si el año tiene datos históricos disponibles)"
             except requests.exceptions.ConnectionError:
-                # Error si no hay conexión a internet o el servidor de la API está caído
-                mensaje_error = "Error de conexión a internet o el servicio no está disponible."
+                # ¡IMPORTANTE! Se corrige la línea para cerrar la comilla y evitar el SyntaxError anterior.
+                mensaje_error = "Error de conexión a internet o el servicio no está disponible." 
             except Exception as e:
-                # Cualquier otro error inesperado (ej: falla al procesar el JSON)
                 mensaje_error = f"Ocurrió un error inesperado al procesar los datos: {e}"
 
     # ----------------------------------------------------
-    # Preparación del Contexto para la Plantilla HTML
+    # Preparación del Contexto para la Plantilla HTML (Solo si falla el POST o es GET)
     # ----------------------------------------------------
-    
-    # El contexto es el diccionario que pasa datos de Python al HTML.
     context = {
-        'form': form,                       # Pasa el formulario (contiene campos, valores ingresados y errores).
-        'regiones': REGIONES_CHOICES,       # Pasa la lista completa de regiones (para llenar el <select> en HTML).
-        'resultado_clima': resultado_clima, # Pasa los datos climáticos procesados (si hay éxito).
-        'mensaje_error': mensaje_error,     # Pasa el mensaje de error (si ocurre).
+        'form': form,                       
+        'regiones': REGIONES_CHOICES,       
+        'resultado_clima': resultado_clima, 
+        'mensaje_error': mensaje_error,     
     }
     
-    # Renderiza la plantilla HTML con todos los datos del contexto.
     return render(request, 'myapp/consulta_clima.html', context)
+
+
+# ==============================================================================
+# NUEVA VISTA: resultados_detalle_view (Función que estaba faltando)
+# ==============================================================================
+def resultados_detalle_view(request):
+    """
+    Función que recupera los datos de clima guardados en la sesión y los 
+    muestra en la nueva página de resultados detallados.
+    """
+    
+    # 1. Obtener y borrar los datos climáticos de la sesión.
+    # .pop('clima_data', None) toma el dato y lo elimina, o devuelve None si no existe.
+    clima_data = request.session.pop('clima_data', None)
+    
+    # 2. Manejo de error: Si no hay datos, redirige al formulario.
+    if not clima_data:
+        return redirect('consulta_clima') 
+
+    # 3. Preparamos el contexto para el nuevo template
+    context = {
+        'data': clima_data,
+        # Placeholder para datos futuros
+        'data_climatologicos_mensuales': {
+             'T. Máx': ['...', '...'], 
+             'Precipitación': ['...', '...'],
+        }
+    }
+    
+    # 4. Renderizamos la nueva plantilla 'resultados_detalle.html'
+    return render(request, 'myapp/resultados_detalle.html', context)
