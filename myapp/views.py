@@ -1,3 +1,4 @@
+import requests
 from django.shortcuts import render
 # Importamos la lista de regiones (para el menú desplegable)
 from .models import REGIONES_CHOICES, RegistroClima

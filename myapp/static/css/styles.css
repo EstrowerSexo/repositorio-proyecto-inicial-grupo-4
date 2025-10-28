@@ -23,9 +23,10 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
+    /* Asegúrate de que esta ruta sea correcta: /static/img/volcan_lago.jpg */
     background-image: url('../img/volcan_lago.jpg'); 
     background-size: cover;
-    background-position: 0% 75%; /*Ajusta la posicion x,y */
+    background-position: 0% 75%; /* Ajusta la posicion x,y */
     z-index: -1; 
 }
 
@@ -37,11 +38,11 @@ body {
 }
 
 .card {
-    background: rgba(255, 255, 255, 0.2); /* Fondo blanco semitransparente (50% de opacidad) */
-    backdrop-filter: blur(10px); /* Efecto de desenfoque de fondo */
+    background: rgba(255, 255, 255, 0.2); 
+    backdrop-filter: blur(10px); 
     padding: 80px;
     border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); /* Sombra suave */
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
     text-align: center;
 }
 
@@ -120,7 +121,6 @@ select:focus {
 
 .btn-buscar:hover {
     background-color: #0056b3;
-    /* 🟢 CORRECCIÓN: Se restauró el degradado del hover */
     background-image: linear-gradient(to top, #0056b3, #0069d9); 
 }
 
@@ -128,7 +128,65 @@ select:focus {
     transform: translateY(1px);
 }
 
-/* Media Queries para responsividad si es necesario */
+/* ---------------------------------------------------- */
+/* 🟢 ESTILOS DE RESULTADOS CORREGIDOS */
+/* ---------------------------------------------------- */
+
+.success-result {
+    /* Fondo verde más oscuro y más opaco (75%) */
+    background: rgba(15, 100, 15, 0.75); 
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+    text-align: left;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.success-result h3 {
+    /* Texto negro para encabezado */
+    color: #333; 
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.success-result p {
+    /* Texto gris oscuro para párrafos */
+    color: #000000; 
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+}
+
+.success-result p strong {
+    /* Texto negro para texto fuerte */
+    color: #333; 
+}
+
+/* Estilo para mensajes de error, también más opaco */
+.error-result {
+    /* Fondo rojo oscuro y más opaco (75%) */
+    background: rgba(179, 0, 0, 0.75); 
+    padding: 15px 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+    text-align: left;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.error-result h3 {
+    /* Texto negro para encabezado */
+    color: #333; 
+    font-size: 1.1rem;
+    margin-bottom: 10px;
+}
+
+.error-result p {
+    /* Texto gris oscuro para párrafos */
+    color: #000000; 
+    font-size: 0.95rem;
+    margin-bottom: 5px;
+}
+
+/* Media Queries para responsividad */
 @media (max-width: 500px) {
     .form-group {
         min-width: 100%;
