@@ -6,11 +6,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CLIMA CHILE - Consulta Regional y Anual</title>
     
+    <!-- Enlace al archivo de estilos principal (para la tarjeta, fondo, y formulario) -->
     <link rel="stylesheet" href="{% static 'css/styles.css' %}"> 
     
+    <!-- Importación de la fuente tipográfica Montserrat -->
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
     
-    <!-- Pequeños estilos para los mensajes de error -->
+    <!-- ---------------------------------------------------- -->
+    <!-- ESTILOS INTERNOS (Para mensajes de error/éxito) -->
+    <!-- Estos estilos fueron ajustados en el archivo styles.css, 
+         pero se mantienen aquí como respaldo o para ajustes finos. -->
+    <!-- ---------------------------------------------------- -->
     <style>
         .error-message {
             color: #dc3545;
@@ -18,64 +24,82 @@
             margin-top: 5px;
             text-align: left;
         }
+        /* Estilos originales del recuadro de éxito */
         .success-result {
             margin-top: 30px;
             padding: 20px;
             border: 1px solid #28a745;
             border-radius: 10px;
-            background-color: rgba(40, 167, 69, 0.1);
+            /* La opacidad y color de texto final están en styles.css */
+            background-color: rgba(40, 167, 69, 0.1); 
             color: #155724;
             text-align: center;
         }
+        /* Estilos originales del recuadro de error */
         .error-result {
             margin-top: 30px;
             padding: 20px;
             border: 1px solid #dc3545;
             border-radius: 10px;
-            background-color: rgba(220, 53, 69, 0.1);
+            /* La opacidad y color de texto final están en styles.css */
+            background-color: rgba(220, 53, 69, 0.1); 
             color: #721c24;
             text-align: center;
         }
     </style>
 </head>
 <body>
+    <!-- Capa para la imagen de fondo con desenfoque -->
     <div class="background-image">
     </div>
     
+    <!-- Contenedor centrado para el formulario -->
     <div class="card-container">
         <div class="card">
             <h1>CLIMA CHILE</h1>
             <p class="subtitle">Consulta Regional y Anual</p>
             
-            <!-- 🟢 Cambios clave: Añadir method="POST" y el token de seguridad -->
+            <!-- ---------------------------------------------------- -->
+            <!-- FORMULARIO DE BÚSQUEDA -->
+            <!-- ---------------------------------------------------- -->
             <form method="POST">
-                {% csrf_token %} <!-- Etiqueta de seguridad de Django: ¡OBLIGATORIA! -->
+                <!-- Etiqueta de seguridad de Django (Cross-Site Request Forgery). ¡OBLIGATORIA! -->
+                {% csrf_token %} 
 
+                <!-- GRUPO DE CAMPO: REGIÓN -->
                 <div class="form-group">
                     <label for="id_region">REGIÓN</label>
                     <select id="id_region" name="region">
+                        <!-- Opción por defecto (deshabilitada) -->
                         <option value="" disabled {% if not form.region.value %}selected{% endif %}>Seleccione una región</option>
                         
-                        <!-- Llenamos las regiones, y marcamos como 'selected' la que el usuario ya eligió -->
+                        <!-- Itera sobre la lista 'regiones' (enviada desde views.py) para llenar el menú -->
                         {% for codigo, nombre in regiones %}
-                            <option value="{{ codigo }}" {% if codigo == form.region.value %}selected{% endif %}>
+                            <!-- El 'value' es el código interno (ej: METROPOLITANA), el texto es el nombre legible -->
+                            <option value="{{ codigo }}" 
+                                    {% if codigo == form.region.value %}selected{% endif %}>
                                 {{ nombre }}
                             </option>
                         {% endfor %}
                         
                     </select>
-                    <!-- 🟢 Mostramos errores de validación para la región -->
+                    <!-- Muestra errores de validación de Django para el campo 'region' -->
                     {% for error in form.region.errors %}
                         <p class="error-message">{{ error }}</p>
                     {% endfor %}
                 </div>
                 
+                <!-- GRUPO DE CAMPO: AÑO -->
                 <div class="form-group">
                     <label for="id_año">AÑO</label>
-                    <!-- 🟢 Usamos el valor del formulario de Django para que el año ingresado no se borre al recargar -->
-                    <input type="text" id="id_año" name="año" placeholder="Ej: 2023" value="{{ form.año.value|default_if_none:'' }}">
+                    <!-- El 'value' se rellena con el dato del formulario para mantener el valor si hay un error -->
+                    <input type="text" 
+                           id="id_año" 
+                           name="año" 
+                           placeholder="Ej: 2023" 
+                           value="{{ form.año.value|default_if_none:'' }}">
                     
-                    <!-- 🟢 Mostramos errores de validación para el año -->
+                    <!-- Muestra errores de validación de Django para el campo 'año' -->
                     {% for error in form.año.errors %}
                         <p class="error-message">{{ error }}</p>
                     {% endfor %}
@@ -85,16 +109,19 @@
             </form>
 
             <!-- ---------------------------------------------------- -->
-            <!-- Mostrar Resultados y Errores de Búsqueda -->
+            <!-- Mostrar Resultados y Errores de Búsqueda de la API -->
             <!-- ---------------------------------------------------- -->
             
+            <!-- Bloque IF: Solo muestra contenido si existe 'resultado_clima' (éxito de API) -->
             {% if resultado_clima %}
               <div class="success-result">
-                 <h3>✅ Datos Históricos Encontrados: {{ resultado_clima.region_nombre }} ({{ resultado_clima.año }})</h3>
-                 <p><strong>Temperatura Máxima Anual:</strong> {{ resultado_clima.temp_max_anual }} °C</p>
-                 <p><strong>Precipitación Total Anual:</strong> {{ resultado_clima.precipitacion_total }} mm</p>
-                 <p class="mt-2" style="font-size: 0.75rem;">Fuente: {{ resultado_clima.fuente }}</p>
+                  <h3>✅ Datos Históricos Encontrados: {{ resultado_clima.region_nombre }} ({{ resultado_clima.año }})</h3>
+                  <p><strong>Temperatura Máxima Anual:</strong> {{ resultado_clima.temp_max_anual }} °C</p>
+                  <p><strong>Precipitación Total Anual:</strong> {{ resultado_clima.precipitacion_total }} mm</p>
+                  <p class="mt-2" style="font-size: 0.75rem;">Fuente: {{ resultado_clima.fuente }}</p>
               </div>
+            
+            <!-- Bloque ELIF: Si no hubo resultado, pero sí un mensaje_error (API falló o no conectó) -->
             {% elif mensaje_error %}
               <div class="error-result">
                 <h3>⚠️ Error de Búsqueda</h3>
