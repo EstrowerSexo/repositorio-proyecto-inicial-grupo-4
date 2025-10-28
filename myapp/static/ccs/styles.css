@@ -1,0 +1,142 @@
+/* Importante: Reiniciar los estilos básicos */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Montserrat', sans-serif; /* Usando una fuente de ejemplo */
+}
+
+/* 🏔️ Estilo del Fondo */
+body {
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f0f0f0; /* Color de fallback */
+    position: relative;
+    overflow: hidden;
+}
+
+.background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Reemplaza la URL con la ruta a tu propia imagen */
+    background-image: url('URL_DE_TU_IMAGEN_DE_VOLCAN_Y_LAGO.jpg'); 
+    background-size: cover;
+    background-position: center;
+    z-index: -1; /* Para que quede detrás de la tarjeta */
+}
+
+/* 🖼️ Contenedor y Tarjeta Principal */
+.card-container {
+    padding: 20px;
+    width: 90%;
+    max-width: 550px; /* Ancho máximo para el formulario */
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.85); /* Fondo blanco semitransparente */
+    backdrop-filter: blur(10px); /* Efecto de desenfoque de fondo */
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2); /* Sombra suave */
+    text-align: center;
+}
+
+/* 📝 Títulos y Subtítulos */
+.card h1 {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.card .subtitle {
+    font-size: 1.1rem;
+    font-weight: 400;
+    color: #666;
+    margin-bottom: 40px;
+}
+
+/* 📋 Estilos de Formulario */
+form {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los campos se alineen en la misma fila */
+    gap: 20px; /* Espacio entre los grupos de formulario */
+    justify-content: center;
+}
+
+.form-group {
+    flex: 1; /* Permite que ambos form-group ocupen el mismo ancho */
+    min-width: 200px; /* Ancho mínimo para que no se vea muy pequeño */
+    text-align: left;
+}
+
+.form-group label {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+/* Estilo para los campos de entrada y selección */
+input[type="text"], 
+select {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+    color: #333;
+    background-color: #fff;
+    transition: border-color 0.3s;
+}
+
+input[type="text"]:focus, 
+select:focus {
+    border-color: #007bff; /* Color azul al enfocar */
+    outline: none;
+}
+
+/* 🔍 Botón de Búsqueda */
+.btn-buscar {
+    width: 100%; /* El botón ocupa todo el ancho de la tarjeta */
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #007bff; /* Azul vibrante */
+    background-image: linear-gradient(to top, #0069d9, #007bff); /* Degradado sutil */
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+    box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+}
+
+.btn-buscar:hover {
+    background-color: #0056b3;
+    background-image: linear-gradient(to top, #0056b3, #0069d9);
+}
+
+.btn-buscar:active {
+    transform: translateY(1px); /* Efecto de "clic" */
+}
+
+/* Media Queries para responsividad si es necesario */
+@media (max-width: 500px) {
+    .form-group {
+        min-width: 100%; /* En pantallas pequeñas, cada campo ocupa su propia línea */
+    }
+    .card {
+        padding: 25px;
+    }
+    .card h1 {
+        font-size: 2rem;
+    }
+}

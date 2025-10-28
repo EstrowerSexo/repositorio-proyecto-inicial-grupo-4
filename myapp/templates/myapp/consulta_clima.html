@@ -1,0 +1,39 @@
+{% load static %}
+<link rel="stylesheet" href="{% static 'css/styles.css' %}">
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CLIMA CHILE - Consulta Regional y Anual</title>
+    <link rel="stylesheet" href="styles.css"> 
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-image">
+        </div>
+    
+    <div class="card-container">
+        <div class="card">
+            <h1>CLIMA CHILE</h1>
+            <p class="subtitle">Consulta Regional y Anual</p>
+            
+            <form>
+                <div class="form-group">
+                    <label for="region">REGIÓN</label>
+                    <select id="region" name="region">
+                        <option value="" disabled selected>Seleccione una región</option>
+                        </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="year">AÑO</label>
+                    <input type="text" id="year" name="year" placeholder="Ej: 2023">
+                </div>
+                
+                <button type="submit" class="btn-buscar">BUSCAR CLIMA</button>
+            </form>
+        </div>
+    </div>
+</body>
+</html>
