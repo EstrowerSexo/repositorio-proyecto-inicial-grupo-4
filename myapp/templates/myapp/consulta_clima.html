@@ -9,6 +9,34 @@
     <link rel="stylesheet" href="{% static 'css/styles.css' %}"> 
     
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Pequeños estilos para los mensajes de error -->
+    <style>
+        .error-message {
+            color: #dc3545;
+            font-size: 0.85rem;
+            margin-top: 5px;
+            text-align: left;
+        }
+        .success-result {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #28a745;
+            border-radius: 10px;
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #155724;
+            text-align: center;
+        }
+        .error-result {
+            margin-top: 30px;
+            padding: 20px;
+            border: 1px solid #dc3545;
+            border-radius: 10px;
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #721c24;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
     <div class="background-image">
@@ -19,21 +47,61 @@
             <h1>CLIMA CHILE</h1>
             <p class="subtitle">Consulta Regional y Anual</p>
             
-            <form>
+            <!-- 🟢 Cambios clave: Añadir method="POST" y el token de seguridad -->
+            <form method="POST">
+                {% csrf_token %} <!-- Etiqueta de seguridad de Django: ¡OBLIGATORIA! -->
+
                 <div class="form-group">
-                    <label for="region">REGIÓN</label>
-                    <select id="region" name="region">
-                        <option value="" disabled selected>Seleccione una región</option>
-                        </select>
+                    <label for="id_region">REGIÓN</label>
+                    <select id="id_region" name="region">
+                        <option value="" disabled {% if not form.region.value %}selected{% endif %}>Seleccione una región</option>
+                        
+                        <!-- Llenamos las regiones, y marcamos como 'selected' la que el usuario ya eligió -->
+                        {% for codigo, nombre in regiones %}
+                            <option value="{{ codigo }}" {% if codigo == form.region.value %}selected{% endif %}>
+                                {{ nombre }}
+                            </option>
+                        {% endfor %}
+                        
+                    </select>
+                    <!-- 🟢 Mostramos errores de validación para la región -->
+                    {% for error in form.region.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
                 </div>
                 
                 <div class="form-group">
-                    <label for="year">AÑO</label>
-                    <input type="text" id="year" name="year" placeholder="Ej: 2023">
+                    <label for="id_año">AÑO</label>
+                    <!-- 🟢 Usamos el valor del formulario de Django para que el año ingresado no se borre al recargar -->
+                    <input type="text" id="id_año" name="año" placeholder="Ej: 2023" value="{{ form.año.value|default_if_none:'' }}">
+                    
+                    <!-- 🟢 Mostramos errores de validación para el año -->
+                    {% for error in form.año.errors %}
+                        <p class="error-message">{{ error }}</p>
+                    {% endfor %}
                 </div>
                 
                 <button type="submit" class="btn-buscar">BUSCAR CLIMA</button>
             </form>
+
+            <!-- ---------------------------------------------------- -->
+            <!-- Mostrar Resultados y Errores de Búsqueda -->
+            <!-- ---------------------------------------------------- -->
+            
+            {% if resultado_clima %}
+              <div class="success-result">
+                 <h3>✅ Datos Históricos Encontrados: {{ resultado_clima.region_nombre }} ({{ resultado_clima.año }})</h3>
+                 <p><strong>Temperatura Máxima Anual:</strong> {{ resultado_clima.temp_max_anual }} °C</p>
+                 <p><strong>Precipitación Total Anual:</strong> {{ resultado_clima.precipitacion_total }} mm</p>
+                 <p class="mt-2" style="font-size: 0.75rem;">Fuente: {{ resultado_clima.fuente }}</p>
+              </div>
+            {% elif mensaje_error %}
+              <div class="error-result">
+                <h3>⚠️ Error de Búsqueda</h3>
+                <p>{{ mensaje_error }}</p>
+              </div>
+            {% endif %}
+            
         </div>
     </div>
 </body>
