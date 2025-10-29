@@ -17,9 +17,11 @@ urlpatterns = [
     # 2. El segundo argumento (views.clima_view) es la función Python que Django
     #    debe ejecutar cuando se accede a esta ruta.
     # 3. El tercer argumento (name='consulta_clima') es el nombre interno de la ruta.
-    #    Esto es útil para referenciar la URL desde otras partes de Django (ej: en el HTML
-    #    al usar {% url 'consulta_clima' %}).
+    #    Esto es útil para referenciar la URL desde otras partes de Django (ej: en el HTML al usar {% url 'consulta_clima' %}).
+    # RUTA PRINCIPAL DE LA APLICACIÓN
     path('', views.clima_view, name='consulta_clima'), 
     # NUEVA RUTA: Para mostrar los resultados detallados
-    path('resultados/', views.resultados_detalle_view, name='resultados_detalle'), 
+    path('resultados/', views.resultados_detalle_view, name='resultados_detalle'),
+    # 💡 NUEVA RUTA AJAX: Para cargar datos dinámicamente con el slider
+    path('api/fetch_data/', views.fetch_clima_data_ajax, name='fetch_clima_data_ajax'),  
 ]
