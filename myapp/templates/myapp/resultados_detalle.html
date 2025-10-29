@@ -6,103 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CLIMA CHILE - Resultados Detalle</title>
     
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> 
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
 
-    <style>
-        /* Ajuste del card para tener más espacio para los gráficos y tablas */
-        .card-detalle {
-            background: rgba(255, 255, 255, 0.2); 
-            backdrop-filter: blur(10px); 
-            padding: 30px; 
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            text-align: left; 
-            max-width: 900px; /* Más ancho que el formulario inicial */
-            width: 90%;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .header-detalle {
-            text-align: center;
-        }
-        
-        /* Contenedor principal para las dos columnas (Mapa y Estadísticas) */
-        .content-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr; 
-            gap: 30px;
-        }
-
-        /* Estilo para el espacio reservado para el mapa */
-        .map-section {
-            border: 1px solid #ccc; 
-            height: 350px;
-            background-color: #f8f8f8;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 1.2rem;
-            color: #666;
-            border-radius: 10px;
-        }
-
-        .stats-section h2 {
-            font-size: 1.8rem;
-            color: #333;
-            margin-bottom: 20px;
-        }
-        
-        /* Estilo para las tarjetas de métricas clave (T° Máxima, Precipitación) */
-        .key-metric {
-            background-color: rgba(0, 123, 255, 0.1); /* Azul claro */
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 1.1rem;
-            font-weight: 600;
-        }
-
-        /* Botón de Volver */
-        .back-button {
-            width: 100%;
-            padding: 15px;
-            margin-top: 20px;
-            background-color: #6c757d; /* Gris */
-            background-image: linear-gradient(to top, #5a6268, #6c757d);
-            color: white;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            text-align: center;
-            text-decoration: none; /* Quitar subrayado del <a> */
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-        }
-        
-        /* Media query para hacer el diseño responsivo en pantallas pequeñas */
-        @media (max-width: 800px) {
-            .content-grid {
-                grid-template-columns: 1fr; /* Una columna en lugar de dos */
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="{% static 'css/detalle.css' %}"> 
+    
 </head>
-<body>
-    <div class="background-image"></div>
+<body style="background-image: url('{% static "img/"|add:data.imagen_fondo %}'); background-size: cover; background-position: center; background-attachment: fixed;">
     
     <div class="card-container">
         <div class="card-detalle"> 
             
             <div class="header-detalle">
                 <h1>CLIMA CHILE - Resultados Detalle</h1>
-                <p class="subtitle">Análisis Anual - Región de **{{ data.region_nombre }}** ({{ data.año }})</p>
+                <p class="subtitle">Análisis Histórico y Pronóstico - Región de **{{ data.region_nombre }}** ({{ data.año }})</p>
                 <hr>
             </div>
             
@@ -110,32 +29,93 @@
                 
                 <div class="left-column">
                     <h2>🗺️ Región de Búsqueda</h2>
-                    <div class="map-section">
-                        [Espacio reservado para el Mapa]
-                    </div>
                     
-                    <h3 style="margin-top: 20px;">Datos Climatológicos Mensuales</h3>
-                    <p style="font-size: 0.9rem; color: #666;">**NOTA:** La implementación detallada de tablas y gráficos mensuales requerirá obtener más datos de la API (ej: promedios mensuales) y librerías de visualización.</p>
+                    <div id="mapid" class="map-section">
+                        </div>
+                    
+                    {% if not data.is_historical %}
+                        <div class="forecast-container">
+                            <h3 style="margin-bottom: 15px; color: #333;">Predicción a 7 Días</h3>
+                            <div class="forecast-grid">
+                                {% for day in data.forecast %} 
+                                    <div class="forecast-day">
+                                        <h4>{{ day.dia|date:"D d/m" }}</h4> 
+                                        <p>{{ day.wmo_code|default:"N/A" }}</p> 
+                                        <p class="temp-range">{{ day.temp_min|floatformat:0 }}°C / {{ day.temp_max|floatformat:0 }}°C</p>
+                                        <p class="precip">Lluvia: {{ day.precipitacion|floatformat:1 }} mm</p>
+                                    </div>
+                                {% empty %}
+                                    <p style="color: blue;">El pronóstico para el año **{{ data.año }}** está pendiente de implementación. (No se pudo obtener el pronóstico a 7 días.)</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="forecast-container">
+                            <h3 style="margin-bottom: 15px; color: #333;">Predicción a 7 Días</h3>
+                            <p style="color: #666;">El pronóstico a 7 días no está disponible para el año histórico **{{ data.año }}**.</p>
+                        </div>
+                    {% endif %}
+
+                    <div class="slider-container">
+                        <h3 style="margin-bottom: 10px;">Selección de Periodo Histórico</h3>
+                        <label for="month-slider" id="month-label" style="font-weight: bold;">Periodo: Anual</label>
+                        <input type="range" id="month-slider" min="0" max="12" value="0" step="1">
+                        <div class="month-labels">
+                            <span>Anual</span>
+                            <span>Enero</span>
+                            <span>...</span>
+                            <span>Diciembre</span>
+                        </div>
+                    </div>
+
                 </div>
                 
                 <div class="stats-section">
-                    <h2>📊 Métricas Clave Anuales</h2>
                     
-                    <div class="key-metric">
-                        <span>Temperatura Máxima Anual:</span> 
-                        <span>**{{ data.temp_max_anual }} °C**</span>
-                    </div>
-                    
-                    <div class="key-metric">
-                        <span>Precipitación Total Anual:</span> 
-                        <span>**{{ data.precipitacion_total }} mm**</span>
-                    </div>
+                    <div class="stats-scroll-container">
+                        <h2>📊 Métricas Clave Anuales</h2>
+                        
+                        <div class="metric-grid">
+                            
+                            <div class="key-metric">
+                                <span>Temperatura Máxima Anual:</span> 
+                                <span>**{{ data.temp_max_anual }} °C**</span>
+                            </div>
+                            
+                            <div class="key-metric">
+                                <span>Precipitación Total Anual:</span> 
+                                <span>**{{ data.precipitacion_total }} mm**</span>
+                            </div>
 
-                    <p style="font-size: 0.8rem; color: #666; text-align: right;">Fuente: {{ data.fuente }}</p>
-                    
-                    <h3 style="margin-top: 30px;">Tablas Estadísticas Anuales</h3>
-                    <p style="font-size: 0.9rem; color: #666;">Aquí se integrarían tablas con promedios, medianas y otros datos de resumen anual.</p>
+                            <div class="key-metric">
+                                <span>Velocidad Viento Máx:</span> 
+                                <span>**{{ data.wind_speed_max }} km/h**</span>
+                            </div>
 
+                            <div class="key-metric">
+                                <span>Radiación Solar Total:</span> 
+                                <span>**{{ data.radiacion_total }} J/m²**</span>
+                            </div>
+                        </div>
+
+                        <p style="font-size: 0.8rem; color: #666; text-align: right;">Fuente: {{ data.fuente }}</p>
+                        
+                        <h3 style="margin-top: 30px;">Tablas Estadísticas Mensuales</h3>
+                        <p style="font-size: 0.9rem; color: #666;">**NOTA:** La tabla de datos históricos mensuales se actualiza dinámicamente al mover el *slider*.</p>
+                        
+                        <table style="width: 100%; margin-top: 20px; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background-color: #007bff; color: white;">
+                                    <th style="padding: 10px;">Mes</th>
+                                    <th style="padding: 10px;">T° Máx Prom.</th>
+                                    <th style="padding: 10px;">Precip. Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="monthly-data-table">
+                                <tr><td colspan="3" style="text-align: center; padding: 10px;">Datos disponibles al elegir un mes.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
             
@@ -147,5 +127,87 @@
             
         </div>
     </div>
+
+    <script>
+        // ----------------------------------------------------
+        // 1. Lógica del Mapa Leaflet
+        // ----------------------------------------------------
+        const lat = {{ data.lat }};
+        const lon = {{ data.lon }};
+        const regionNombre = "{{ data.region_nombre }}";
+
+        try {
+            // Se usa un zoom más apropiado para regiones (ej: 6)
+            const map = L.map('mapid').setView([lat, lon], 6); 
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            L.marker([lat, lon]).addTo(map)
+                .bindPopup(`<b>${regionNombre}</b>`).openPopup();
+        } catch (e) {
+            console.error("Error al inicializar el mapa Leaflet:", e);
+            document.getElementById('mapid').innerHTML = '<p style="text-align:center; color:red; padding:20px;">Error al cargar el mapa. Verifique la conexión o la librería Leaflet.</p>';
+        }
+
+        // ----------------------------------------------------
+        // 2. Lógica del Slider de Mes (Ahora funcional con datos reales)
+        // ----------------------------------------------------
+        // 💡 NUEVO: Parsear la cadena JSON con los datos mensuales pre-calculados por Django
+        const monthlyMetrics = JSON.parse('{{ monthly_metrics_json|escapejs }}'); 
+        const tempMaxAnual = {{ data.temp_max_anual|default:0 }};
+        const precipTotalAnual = {{ data.precipitacion_total|default:0 }};
+
+        const monthSlider = document.getElementById('month-slider');
+        const monthLabel = document.getElementById('month-label');
+        const tableBody = document.getElementById('monthly-data-table');
+        
+        const months = [
+            'Anual', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ];
+
+        function updateMonthData(value) {
+            monthLabel.textContent = `Periodo: ${months[value]}`;
+            
+            if (value === 0) {
+                // Opción Anual: Muestra el resumen total
+                tableBody.innerHTML = `
+                    <tr>
+                        <td style="padding: 10px;">Anual</td>
+                        <td style="padding: 10px;">${tempMaxAnual} °C</td>
+                        <td style="padding: 10px;">${precipTotalAnual} mm</td>
+                    </tr>
+                `;
+            } else {
+                // Opción Mensual: Usa los datos pre-calculados de Django
+                const monthKey = value.toString(); // Las claves del diccionario son strings (ej: '1', '2')
+                const monthData = monthlyMetrics[monthKey];
+                
+                if (monthData) {
+                    tableBody.innerHTML = `
+                        <tr>
+                            <td style="padding: 10px;">${months[value]}</td>
+                            <td style="padding: 10px;">${monthData.temp_avg} °C</td>
+                            <td style="padding: 10px;">${monthData.precip_sum} mm</td>
+                        </tr>
+                    `;
+                } else {
+                    // Si no hay datos (ej: el API no los devolvió por algún error)
+                    tableBody.innerHTML = '<tr><td colspan="3" style="text-align: center; padding: 10px;">No hay datos para este mes.</td></tr>';
+                }
+            }
+        }
+
+        monthSlider.addEventListener('input', (event) => {
+            const value = parseInt(event.target.value);
+            updateMonthData(value);
+        });
+
+        // Inicializar el slider en 'Anual' al cargar la página
+        updateMonthData(0);
+
+    </script>
 </body>
 </html>

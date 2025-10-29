@@ -1,0 +1,256 @@
+/* -------------------------------------------------------------------------- */
+/* ESTILOS DE LA PÁGINA DE DETALLE (ANCHO COMPLETO Y ESTÉTICA MODERNA) */
+/* -------------------------------------------------------------------------- */
+
+/* Estilo base del body y fondo */
+body {
+    font-family: 'Montserrat', sans-serif;
+    color: #333;
+    margin: 0;
+    padding: 0; 
+    min-height: 100vh;
+    /* El background-image se define en el HTML con la variable de Django */
+}
+
+/* 🖼️ Contenedor Principal (Para centrado y ancho) */
+.card-container {
+    display: flex;
+    justify-content: center; 
+    align-items: flex-start; /* Alinea el contenido arriba */
+    min-height: 100vh;       
+    padding: 40px 0;         /* Más padding vertical para respirar */
+    width: 100%;             
+    max-width: 95vw;         /* Ancho para sobrescribir styles.css */
+    margin: 0 auto;
+}
+
+/* 💳 Tarjeta Principal de Resultados (Fondo transparente con efecto de cristal) */
+.card-detalle {
+    background: rgba(255, 255, 255, 0.2); 
+    backdrop-filter: blur(15px); /* Aumento el desenfoque para un mejor efecto 'glass' */
+    padding: 40px; 
+    border-radius: 25px; /* Bordes más redondeados */
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4); /* Sombra más fuerte y suave */
+    border: 1px solid rgba(255, 255, 255, 0.3); /* Borde ligero para resaltar el efecto glass */
+    text-align: left; 
+    width: 100%; 
+    display: flex;
+    flex-direction: column;
+    gap: 30px; /* Más espacio entre secciones */
+    color: #222; /* Color de texto más oscuro para mejor legibilidad */
+}
+
+.header-detalle {
+    text-align: center;
+}
+
+h1 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #004085; /* Azul oscuro para los títulos principales */
+    margin-bottom: 5px;
+}
+.subtitle {
+    font-weight: 500;
+    color: #444;
+    margin-top: 0;
+    margin-bottom: 25px;
+}
+hr {
+    border: none;
+    height: 1px;
+    background-color: rgba(0, 0, 0, 0.1);
+    margin: 15px 0;
+}
+
+/* Contenedor principal para las dos columnas (Mapa y Estadísticas) */
+.content-grid {
+    display: grid;
+    grid-template-columns: 3fr 2fr; /* 60% para mapa/pronóstico, 40% para stats */
+    gap: 40px; /* Más espacio entre columnas */
+    flex-grow: 1;
+}
+
+/* 🗺️ Sección de Mapa y Pronóstico */
+.map-section {
+    height: 400px; 
+    border-radius: 15px; /* Bordes redondeados */
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden; /* Asegura que el mapa respete el borde redondeado */
+}
+
+.left-column h2, .stats-section h2 {
+    font-size: 1.6rem;
+    color: #007bff;
+    margin-bottom: 20px;
+}
+
+/* 🌤️ Predicción a 7 Días */
+.forecast-container {
+    background: rgba(255, 255, 255, 0.85); /* Fondo casi blanco */
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.forecast-grid {
+    display: flex;
+    overflow-x: auto;
+    gap: 10px; /* Espacio más compacto */
+    padding-bottom: 10px;
+}
+
+.forecast-day {
+    flex-shrink: 0;
+    width: 120px;
+    padding: 10px 5px; 
+    background-color: white;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s;
+}
+
+.forecast-day:hover {
+    transform: translateY(-3px);
+}
+
+.forecast-day h4 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: #333;
+}
+
+.forecast-day .temp-range {
+    font-weight: 700;
+    color: #dc3545; 
+    font-size: 1rem; 
+}
+
+
+/* 📊 Sección de Estadísticas */
+.stats-scroll-container {
+    max-height: 70vh; 
+    overflow-y: auto;
+    padding-right: 15px;
+    /* Estilos de scrollbar para navegadores basados en Webkit */
+    scrollbar-width: thin;
+    scrollbar-color: #007bff #f1f1f1;
+}
+
+.stats-scroll-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.stats-scroll-container::-webkit-scrollbar-thumb {
+    background-color: #007bff;
+    border-radius: 10px;
+}
+
+.stats-scroll-container::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+/* Estilo para las tarjetas de métricas clave (Grid) */
+.metric-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 2 columnas en el espacio del sidebar */
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.key-metric {
+    background-color: #e9f5ff; /* Azul muy claro */
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+    font-size: 0.95rem;
+    font-weight: 600;
+    border-left: 5px solid #007bff; /* Borde de color para énfasis */
+}
+
+.key-metric span:last-child {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #007bff;
+    margin-top: 8px;
+}
+
+/* 📅 Estilos de Tabla de Datos Mensuales */
+.stats-section table {
+    border-collapse: collapse;
+    margin-top: 20px;
+    font-size: 0.9rem;
+}
+
+.stats-section th, .stats-section td {
+    padding: 12px 15px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+
+.stats-section thead tr {
+    background-color: #007bff;
+    color: white;
+    border-radius: 10px 10px 0 0;
+}
+
+.stats-section tbody tr:nth-child(even) {
+    background-color: #f8f8f8;
+}
+
+.stats-section tbody tr:hover {
+    background-color: #eaf6ff;
+    cursor: pointer;
+}
+
+
+/* Botón de Volver */
+.back-button {
+    width: 100%;
+    padding: 15px;
+    margin-top: 20px;
+    background-color: #6c757d; 
+    background-image: linear-gradient(to top, #5a6268, #6c757d);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    transition: background-image 0.3s, transform 0.2s;
+}
+
+.back-button:hover {
+    background-image: linear-gradient(to top, #6c757d, #5a6268);
+    transform: translateY(-2px);
+}
+
+/* Media query para hacer el diseño responsivo en pantallas pequeñas */
+@media (max-width: 1000px) {
+    .content-grid {
+        grid-template-columns: 1fr; 
+    }
+
+    .card-detalle {
+        padding: 25px;
+    }
+    
+    .stats-scroll-container {
+        max-height: none; 
+        overflow-y: visible;
+        padding-right: 0;
+    }
+    .map-section {
+        height: 300px; 
+    }
+
+    .metric-grid {
+        grid-template-columns: 1fr; /* Una columna para móviles */
+    }
+}
