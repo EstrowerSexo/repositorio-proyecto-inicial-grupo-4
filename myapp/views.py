@@ -46,7 +46,7 @@ REGION_BACKGROUNDS = {  #editar nombres de imagenes y añadir las imagenes a la 
     'ATACAMA': 'ATACAMA.jpg',
     'COQUIMBO': 'COQUIMBO.jpg',
     'VALPARAISO': 'VALPARAISO.jpg',
-    'METROPOLITANA': 'METROPOLITANA.jpg',
+    'METROPOLITANA': 'SANTIAGO.jpg',
     'OHIGGINS': 'OHIGGINS.jpg',
     'MAULE': 'MAULE.jpg',
     'NUBLE': 'ÑUBLE.jpg',
