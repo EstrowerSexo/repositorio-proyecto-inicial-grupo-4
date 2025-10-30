@@ -31,6 +31,11 @@ body {
     border: 1px solid rgba(255, 255, 255, 0.3);
     width: 100%;
     max-width: 1300px;
+    width: 100%;
+    
+    /* 🚨 CLAVE 1: Convertirlo en Flexbox vertical */
+    display: flex;
+    flex-direction: column;
 }
 
 .header-detalle {
@@ -221,7 +226,6 @@ body {
 .back-button {
     width: 100%;
     padding: 15px;
-    margin-top: 20px;
     background-color: #6c757d; 
     background-image: linear-gradient(to top, #5a6268, #6c757d);
     color: white;
