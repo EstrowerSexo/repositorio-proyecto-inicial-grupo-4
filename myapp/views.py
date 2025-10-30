@@ -40,22 +40,22 @@ REGION_COORDS = {
 }
 
 REGION_BACKGROUNDS = {  #editar nombres de imagenes y añadir las imagenes a la carpeta statics/img cn los mismos nombres y en jpg!!!
-    'ARICA': 'black.jpg',
-    'TARAPACA': 'black.jpg',
-    'ANTOFAGASTA': 'black.jpg',
-    'ATACAMA': 'black.jpg',
-    'COQUIMBO': 'black.jpg',
-    'VALPARAISO': 'black.jpg',
-    'METROPOLITANA': 'black.jpg',
-    'OHIGGINS': 'black.jpg',
-    'MAULE': 'black.jpg',
-    'NUBLE': 'black.jpg',
-    'BIOBIO': 'black.jpg',
-    'ARAUCANIA': 'black.jpg',
-    'RIOS': 'black.jpg',
-    'LAGOS': 'black.jpg',
-    'AYSEN': 'black.jpg',
-    'MAGALLANES': 'black.jpg',
+    'ARICA': 'ARICA.jpg',
+    'TARAPACA': 'TARAPACA.jpg',
+    'ANTOFAGASTA': 'ANTOFAGASTA.jpg',
+    'ATACAMA': 'ATACAMA.jpg',
+    'COQUIMBO': 'COQUIMBO.jpg',
+    'VALPARAISO': 'VALPARAISO.jpg',
+    'METROPOLITANA': 'METROPOLITANA.jpg',
+    'OHIGGINS': 'OHIGGINS.jpg',
+    'MAULE': 'MAULE.jpg',
+    'NUBLE': 'ÑUBLE.jpg',
+    'BIOBIO': 'BIOBIO.jpg',
+    'ARAUCANIA': 'ARAUCANIA.jpg',
+    'RIOS': 'RIOS.jpg',
+    'LAGOS': 'LAGOS.jpg',
+    'AYSEN': 'AYSEN.jpg',
+    'MAGALLANES': 'MAGALLANES.jpg',
 }
 def resultados_detalle_view(request):
     clima_params = request.session.get('clima_params', None)
