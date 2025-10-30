@@ -39,7 +39,7 @@ REGION_COORDS = {
     'MAGALLANES': (-53.16, -70.91),     
 }
 
-REGION_BACKGROUNDS = {  #editar nombres de imagenes!!!
+REGION_BACKGROUNDS = {  #editar nombres de imagenes y añadir las imagenes a la carpeta statics/img cn los mismos nombres y en jpg!!!
     'ARICA': 'black.jpg',
     'TARAPACA': 'black.jpg',
     'ANTOFAGASTA': 'black.jpg',
