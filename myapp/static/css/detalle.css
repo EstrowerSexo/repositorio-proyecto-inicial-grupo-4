@@ -88,18 +88,36 @@ body {
 }
 
 /* Contenedores interiores (Slider y Forecast) - Fondo más opaco para legibilidad */
-.slider-container, .forecast-container {
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.85);
+.slider-container {
+    background-color: #f7f7f7;
+    padding: 20px;
     border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    margin-top: 20px;
 }
 
-.slider-container {
-    margin-bottom: 25px;
+/* ✅ MODIFICACIÓN: Estilo para la etiqueta superior. Se eliminó el "cuadrado azul" de aquí. */
+#month-label, #day-label {
+    display: block; /* Necesario para que el text-align center funcione */
+    text-align: center;
+    margin-bottom: 15px; /* Espacio debajo de la etiqueta */
+    font-weight: 600;
+    color: #333;
 }
-.forecast-container {
-    margin-bottom: 0;
+
+/* ✅ MODIFICACIÓN CLAVE: Slider al 100% de ancho */
+#month-slider, #day-slider {
+    width: 100%; 
+    margin: 10px 0; /* Se elimina el margin: auto */
+    display: block;
+}
+
+.month-labels-simple, .day-slider-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 5px;
 }
 
 /* 🚨 ARREGLO DEL SLIDER: Fija el espacio de la etiqueta */
@@ -107,6 +125,11 @@ body {
     min-height: 25px; /* Altura suficiente para el texto más largo */
     width: 100%;
     margin-bottom: 10px;
+}
+
+#month-slider, #day-slider {
+    width: 100%; /* ¡Esto es lo crucial! */
+    margin: 10px 0; /* Espacio vertical */
 }
 
 #month-label {

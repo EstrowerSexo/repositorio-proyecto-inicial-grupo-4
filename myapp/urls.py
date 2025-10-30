@@ -11,17 +11,21 @@ urlpatterns = [
     # RUTA PRINCIPAL DE LA APLICACIÓN
     # --------------------------------------------------------------------------
     
-    # path('', views.clima_view, name='consulta_clima')
-    # 1. El primer argumento ('') define la ruta: En este caso, la raíz de la aplicación 
-    #    (ej: si el proyecto usa /clima/, esta ruta será http://.../clima/).
-    # 2. El segundo argumento (views.clima_view) es la función Python que Django
-    #    debe ejecutar cuando se accede a esta ruta.
-    # 3. El tercer argumento (name='consulta_clima') es el nombre interno de la ruta.
-    #    Esto es útil para referenciar la URL desde otras partes de Django (ej: en el HTML al usar {% url 'consulta_clima' %}).
-    # RUTA PRINCIPAL DE LA APLICACIÓN
+    # RUTA PRINCIPAL DE la APLICACIÓN
     path('', views.clima_view, name='consulta_clima'), 
-    # NUEVA RUTA: Para mostrar los resultados detallados
-    path('resultados/', views.resultados_detalle_view, name='resultados_detalle'),
-    # 💡 NUEVA RUTA AJAX: Para cargar datos dinámicamente con el slider
-    path('api/fetch_data/', views.fetch_clima_data_ajax, name='fetch_clima_data_ajax'),  
+    
+    # RUTA 1: Resultados detallados (Histórico Anual/Mensual)
+    path('resultados/', views.resultados_detalle_view, name='resultados_detalle'), 
+    
+    # ✅ NUEVA RUTA 2: Detalle Diario/Pronóstico (Actualidad)
+    #    Esta es la página de destino cuando el slider de histórico llega a 'Actualidad'.
+    path('pronostico/', views.pronostico_detalle_view, name='pronostico_detalle'),
+    
+    # RUTA AJAX 1: Endpoint para cargar datos Históricos Anuales/Mensuales (usado en 'resultados_detalle')
+    #    (Nota: Se ha renombrado de 'api/fetch_data/' para un nombre más específico y sin el prefijo 'api/')
+    path('fetch_clima_data_ajax/', views.fetch_clima_data_ajax, name='fetch_clima_data_ajax'),  
+    
+    # ✅ NUEVA RUTA AJAX 2: Endpoint para cargar datos Diarios (-14 a +14 días)
+    #    Usado en la nueva vista 'pronostico_detalle'.
+    path('fetch_pronostico_ajax/', views.fetch_pronostico_ajax, name='fetch_pronostico_ajax'),
 ]

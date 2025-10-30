@@ -57,7 +57,27 @@ REGION_BACKGROUNDS = {
     'AYSEN': 'aysen_glaciar.jpg',
     'MAGALLANES': 'magallanes_pinguinos.jpg',
 }
+def resultados_detalle_view(request):
+    clima_params = request.session.get('clima_params', None)
+    
+    if not clima_params:
+        return redirect('consulta_clima')
 
+    # Obtener la imagen de fondo correspondiente
+    region_code = clima_params['region_code']
+    clima_params['imagen_fondo'] = REGION_BACKGROUNDS.get(region_code)
+    
+    # ...resto del código...
+
+def pronostico_detalle_view(request):
+    clima_params = request.session.get('clima_params', None)
+    
+    if not clima_params:
+        return redirect('consulta_clima')
+
+    # Obtener la imagen de fondo correspondiente
+    region_code = clima_params['region_code']
+    clima_params['imagen_fondo'] = REGION_BACKGROUNDS.get(region_code)
 # ==============================================================================
 # FUNCIÓN AUXILIAR: Cálculo de Métricas (Se mantiene igual)
 # ==============================================================================
@@ -142,12 +162,12 @@ def clima_view(request):
 
 
 # ==============================================================================
-# VISTA DE DETALLE (resultados_detalle_view) - ✅ MODIFICADA PARA TESTEO
+# VISTA DE DETALLE (resultados_detalle_view) - Histórico (Anual/Mensual)
 # ==============================================================================
 def resultados_detalle_view(request):
     """
     Función que recupera los parámetros de clima de la sesión y muestra la plantilla.
-    Añade variables de fecha actual para el control del slider en JS.
+    Prepara la fecha límite para el historial (1 día atrás).
     """
     
     clima_params = request.session.get('clima_params', None)
@@ -158,35 +178,55 @@ def resultados_detalle_view(request):
     # CÁLCULO DE FECHAS EN EL SERVIDOR
     today = date.today()
     
-    # 🚨🚨🚨 PUNTO CLAVE PARA PROBAR 🚨🚨🚨
-    # Hemos aumentado la diferencia a 3 días como prueba.
+    # 🚨 Se establece a 1 día, según lo confirmado por el usuario
     DAYS_DIFFERENCE = 1 
     
-    # La fecha límite para datos históricos
     n_days_ago = today - timedelta(days=DAYS_DIFFERENCE)
-    
-    # Formato de fecha para pasar a JavaScript (ej: "2025-10-26" si hoy es 29 y DAYS_DIFFERENCE=3)
     limit_date_string = n_days_ago.strftime('%Y-%m-%d')
     
     # Preparamos el contexto
     context = {
         'data': clima_params,
         'current_year': today.year,
-        'current_month': today.month, # 1 (Enero) a 12 (Diciembre)
-        'limit_date': limit_date_string, # Enviamos la fecha límite
+        'current_month': today.month, 
+        'limit_date': limit_date_string, # Enviamos la fecha límite (hace 1 día)
+        'forecast_url': 'pronostico_detalle' # URL de redirección
     }
     
     return render(request, 'myapp/resultados_detalle.html', context)
 
 
 # ==============================================================================
-# VISTA AJAX: fetch_clima_data_ajax - (Usa la variable enviada por resultados_detalle_view)
+# ✅ NUEVA VISTA DE DETALLE (pronostico_detalle_view) - Diario/Forecast
+# ==============================================================================
+def pronostico_detalle_view(request):
+    """
+    Vista para manejar el detalle del pronóstico y datos diarios recientes (-14 a +14 días).
+    Usa el contexto guardado en la sesión.
+    """
+    
+    clima_params = request.session.get('clima_params', None)
+    
+    if not clima_params:
+        return redirect('consulta_clima')
+    
+    today = date.today()
+    
+    context = {
+        'data': clima_params,
+        'today_date_string': today.strftime('%Y-%m-%d'), # Fecha de hoy para centrar el slider
+    }
+    
+    return render(request, 'myapp/pronostico_detalle.html', context)
+
+
+# ==============================================================================
+# VISTA AJAX: fetch_clima_data_ajax - Histórico (Se mantiene)
 # ==============================================================================
 @csrf_exempt 
 def fetch_clima_data_ajax(request):
     """
-    Maneja la solicitud AJAX (POST) desde el slider, llamando a Open-Meteo
-    para el periodo solicitado (histórico o forecast) y devuelve el resumen JSON.
+    Maneja la solicitud AJAX para Histórico Anual/Mensual (API ARCHIVE).
     """
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
@@ -199,11 +239,8 @@ def fetch_clima_data_ajax(request):
     # 1. Obtener parámetros clave
     region_code = data.get('region_code')
     year = int(data.get('year'))
-    month = int(data.get('month')) # 0 = Anual, 99 = Actualidad/Forecast (Forecast ahora es month 99)
-    
-    # NUEVOS PARÁMETROS DE CONTROL
-    is_forecast = data.get('is_forecast', False) # True si se selecciona "Actualidad"
-    # period_end contendrá la fecha límite (por defecto, ayer o hace N días)
+    month = int(data.get('month'))
+    is_forecast = data.get('is_forecast', False) 
     period_end_limit = data.get('period_end')    
 
     if not region_code:
@@ -211,74 +248,50 @@ def fetch_clima_data_ajax(request):
     
     lat, lon = REGION_COORDS.get(region_code)
 
-    # 2. Definir Fechas y API URL
-    
-    # LÓGICA DE FORECAST (Actualidad) - Usa la API de Open-Meteo V1
+    # Si la petición es forecast (13/99), redirigimos la lógica. Esto no debería pasar si el JS redirecciona correctamente.
     if is_forecast:
-        API_URL = "https://api.open-meteo.com/v1/forecast" 
-        periodo_label = f"Actualidad (Pronóstico y datos en vivo)"
-        
-        # Parámetros para el Forecast (7 días por defecto)
-        params = {
-            'latitude': lat,
-            'longitude': lon,
-            'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum', 
-            'current_weather': True, 
-            'timezone': 'auto' 
-        }
+        return JsonResponse({'success': False, 'message': 'El pronóstico se maneja en una URL diferente.'}, status=400)
     
     # LÓGICA DE HISTÓRICO (Slider) - Usa la API de ARCHIVE
-    else:
-        API_URL = "https://archive-api.open-meteo.com/v1/archive" 
+    API_URL = "https://archive-api.open-meteo.com/v1/archive" 
 
-        # 2a. Definir Fechas de Inicio y Fin basadas en el mes para el ARCHIVE
-        if month == 0: # Anual
-            start_date = f"{year}-01-01"
-            
-            # Si tenemos un límite (viene del JS), lo usamos como fin de año. Si no, usamos el 31 de Dic.
-            end_date = period_end_limit if period_end_limit else f"{year}-12-31" 
-            periodo_label = f"Anual ({year})"
+    # 2a. Definir Fechas de Inicio y Fin basadas en el mes para el ARCHIVE
+    if month == 0: # Anual
+        start_date = f"{year}-01-01"
+        end_date = period_end_limit if period_end_limit else f"{year}-12-31" 
+        periodo_label = f"Anual ({year})"
+    
+    else: # Mensual
+        start_date = f"{year}-{month:02d}-01"
         
-        else: # Mensual (month es 1-12)
-            start_date = f"{year}-{month:02d}-01"
-            
-            # 1. Calcular el último día del mes por defecto
-            _, last_day = monthrange(year, month) 
-            end_date_default = date(year, month, last_day).strftime('%Y-%m-%d')
-            
-            # 2. Asumimos el fin de mes por defecto
-            end_date = end_date_default
-            
-            # 3. COMPROBACIÓN CLAVE: Si hay un límite (`period_end_limit`) enviado desde JS, lo aplicamos.
-            if period_end_limit:
-                # Convertimos ambas a objetos date para la comparación
-                limit_date_obj = date.fromisoformat(period_end_limit)
-                end_date_obj = date.fromisoformat(end_date_default)
-                start_date_obj = date.fromisoformat(start_date)
+        _, last_day = monthrange(year, month) 
+        end_date_default = date(year, month, last_day).strftime('%Y-%m-%d')
+        end_date = end_date_default
+        
+        # COMPROBACIÓN CLAVE: Aplicar el límite de fecha (hace 1 día)
+        if period_end_limit:
+            limit_date_obj = date.fromisoformat(period_end_limit)
+            end_date_obj = date.fromisoformat(end_date_default)
+            start_date_obj = date.fromisoformat(start_date)
 
-                # Si el fin de mes es posterior al límite Y el mes de inicio es anterior o igual al límite,
-                # USAMOS el límite.
-                if end_date_obj > limit_date_obj and start_date_obj <= limit_date_obj:
-                    end_date = period_end_limit
-                
-                # Manejo de error si el mes completo está fuera del rango permitido (esto debería ser manejado en JS)
-                elif start_date_obj > limit_date_obj:
-                    return JsonResponse({'success': False, 'message': f'El mes {month} aún no tiene datos históricos disponibles (límite: {period_end_limit}).'}, status=404)
+            if end_date_obj > limit_date_obj and start_date_obj <= limit_date_obj:
+                end_date = period_end_limit
+            elif start_date_obj > limit_date_obj:
+                return JsonResponse({'success': False, 'message': f'El mes {month} aún no tiene datos históricos disponibles (límite: {period_end_limit}).'}, status=404)
 
+        periodo_label = date(year, month, 1).strftime('%B').capitalize() 
 
-            periodo_label = date(year, month, 1).strftime('%B').capitalize() 
+    # Parámetros para el Archive
+    params = {
+        'latitude': lat,
+        'longitude': lon,
+        'start_date': start_date,
+        'end_date': end_date, 
+        'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum', 
+        'timezone': 'auto' 
+    }
 
-        # Parámetros para el Archive
-        params = {
-            'latitude': lat,
-            'longitude': lon,
-            'start_date': start_date,
-            'end_date': end_date, # Usamos la fecha ajustada
-            'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum', 
-            'timezone': 'auto' 
-        }
-
-    # 3. Solicitud a la API de Open-Meteo
+    # 3. Solicitud a la API
     try:
         response = requests.get(API_URL, params=params)
         response.raise_for_status() 
@@ -289,7 +302,6 @@ def fetch_clima_data_ajax(request):
             metrics = calculate_metrics(api_data['daily'])
             
             if metrics:
-                # 5. Devolver las métricas resumidas como JSON
                 return JsonResponse({
                     'success': True,
                     'periodo_label': periodo_label,
@@ -298,12 +310,105 @@ def fetch_clima_data_ajax(request):
                 })
             else:
                 return JsonResponse({'success': False, 'message': 'API no devolvió datos diarios para este periodo.'}, status=404)
-        
-        # Manejo específico para Forecast si no devuelve métricas diarias
-        elif is_forecast and api_data.get('current_weather'):
-             return JsonResponse({'success': False, 'message': 'API de pronóstico devolvió datos insuficientes para un resumen de periodo.'}, status=404)
         else:
             return JsonResponse({'success': False, 'message': 'API no devolvió datos diarios para este periodo.'}, status=404)
+            
+    except requests.exceptions.HTTPError as e:
+        return JsonResponse({'success': False, 'message': f'Error API: El servidor externo devolvió un error ({response.status_code}).'}, status=500)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error inesperado del servidor: {e}'}, status=500)
+
+
+# ==============================================================================
+# ✅ NUEVA VISTA AJAX: fetch_pronostico_ajax - Diario/Forecast
+# ==============================================================================
+@csrf_exempt 
+def fetch_pronostico_ajax(request):
+    """
+    Maneja la solicitud AJAX para Pronóstico diario Open-Meteo V1 y datos históricos recientes (API ARCHIVE).
+    El slider va de -14 a +14 días.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'Formato JSON inválido'}, status=400)
+
+    region_code = data.get('region_code')
+    days_offset = int(data.get('days_offset', 0)) # Offset: -14 a +14
+    
+    if not region_code:
+        return JsonResponse({'error': 'Falta el código de la región'}, status=400)
+    
+    lat, lon = REGION_COORDS.get(region_code)
+
+    # 1. Calcular la fecha de consulta
+    today = date.today()
+    target_date = today + timedelta(days=days_offset)
+    target_date_string = target_date.strftime('%Y-%m-%d')
+    
+    # 2. Definir API URL y parámetros
+    
+    # Lógica:
+    # Si el offset es < 0 (histórico reciente), usamos la API de ARCHIVE.
+    # Si el offset es >= 0 (hoy o pronóstico), usamos la API de FORECAST.
+
+    if days_offset < 0: # Histórico Reciente (hasta 14 días atrás)
+        API_URL = "https://archive-api.open-meteo.com/v1/archive" 
+        # Para obtener SOLO un día, start_date y end_date deben ser iguales.
+        start_date = target_date_string
+        end_date = target_date_string
+        periodo_label = f"Histórico: {target_date_string}"
+        is_forecast_result = False
+    
+    else: # Hoy (0) o Forecast (1 a +14)
+        API_URL = "https://api.open-meteo.com/v1/forecast"
+        start_date = target_date_string
+        end_date = target_date_string 
+        
+        if days_offset == 0:
+            periodo_label = f"Actualidad: {target_date_string}"
+        else:
+            periodo_label = f"Pronóstico: {target_date_string}"
+        
+        is_forecast_result = True
+        
+    
+    # Parámetros (usamos la misma estructura para ambos, Open-Meteo lo maneja)
+    params = {
+        'latitude': lat,
+        'longitude': lon,
+        'start_date': start_date,
+        'end_date': end_date, 
+        'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum', 
+        'timezone': 'auto' 
+    }
+
+    # 3. Solicitud a la API
+    try:
+        response = requests.get(API_URL, params=params)
+        response.raise_for_status() 
+        api_data = response.json()      
+        
+        # 4. Procesar la respuesta (Solo un día de datos)
+        if api_data.get('daily') and len(api_data['daily']['time']) > 0:
+            # La función calculate_metrics puede seguir usándose, aunque solo procesará 1 día.
+            metrics = calculate_metrics(api_data['daily'])
+            
+            if metrics:
+                # 5. Devolver las métricas para un día específico
+                return JsonResponse({
+                    'success': True,
+                    'periodo_label': periodo_label,
+                    'metrics': metrics,
+                    'is_forecast_result': is_forecast_result
+                })
+            else:
+                return JsonResponse({'success': False, 'message': 'API no devolvió datos para la fecha seleccionada.'}, status=404)
+        else:
+            return JsonResponse({'success': False, 'message': 'API no devolvió datos para la fecha seleccionada.'}, status=404)
             
     except requests.exceptions.HTTPError as e:
         return JsonResponse({'success': False, 'message': f'Error API: El servidor externo devolvió un error ({response.status_code}).'}, status=500)

@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLIMA CHILE - Resultados Detalle</title>
+    <title>CLIMA CHILE - Pronóstico Diario</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -15,6 +15,29 @@
 
     <link rel="stylesheet" href="{% static 'css/detalle.css' %}"> 
     
+    <style>
+        /* Estilos específicos para el slider de días */
+        .day-slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: #555;
+            margin-top: 5px;
+        }
+        .day-slider-labels span:nth-child(2) {
+            font-weight: bold;
+            color: #007bff;
+        }
+        
+        /* Estilo para la etiqueta superior (Ahora es un <h3>) */
+        #dynamic-period-header {
+            text-align: center;
+            margin-bottom: 15px; 
+            font-weight: 700;
+            color: #333;
+            font-size: 1.1rem;
+        }
+    </style>
 </head>
 
 <body style="background-image: url('{% static "img/"|add:data.imagen_fondo %}'); background-size: cover; background-position: center; background-attachment: fixed;">
@@ -23,8 +46,8 @@
         <div class="card-detalle"> 
             
             <div class="header-detalle">
-                <h1>CLIMA CHILE - Resultados Detalle</h1>
-                <p class="subtitle">Análisis Histórico - Región de {{ data.region_nombre }} ({{ data.año }})</p>
+                <h1>CLIMA CHILE - Pronóstico y Datos Recientes</h1>
+                <p class="subtitle">Análisis Diario - Región de {{ data.region_nombre }}</p>
             </div>
             
             <div class="content-grid">
@@ -35,35 +58,31 @@
                     <div id="mapid" class="map-section"></div>
                     
                     <div class="slider-container">
-                        <h3 style="margin-bottom: 10px;">Selección de Periodo Histórico</h3>
+                        <h3 style="margin-bottom: 10px;">Selección de Día (-14 a +14)</h3>
                         
-                        <div id="month-label-wrapper"> 
-                            <label for="month-slider" id="month-label">Periodo: **Anual**</label>
-                        </div>
+                        <h3 id="dynamic-period-header">Cargando...</h3> 
 
-                        <input type="range" id="month-slider" min="0" max="13" value="0" step="1">
+                        <input type="range" id="day-slider" min="-14" max="14" value="0" step="1">
                         
-                        <div class="month-labels-simple"> 
-                            <span>Anual</span>
-                            <span>Mensual</span>
-                            <span style="float: right;">Actualidad</span>
+                        <div class="day-slider-labels"> 
+                            <span>-14 días (Histórico)</span>
+                            <span>Hoy</span>
+                            <span style="float: right;">+14 días (Pronóstico)</span>
                         </div>
                     </div>
 
-                    <div id="forecast-block" class="forecast-container" style="display: none;"></div>
-
-                </div>
+                    </div>
                 
                 <div class="stats-section">
                     <div class="stats-scroll-container">
-                        <h2 id="stats-header">📊 Resumen Anual</h2> 
+                        <h2 id="stats-header">📊 Resumen Diario</h2> 
                         
                         <div class="metric-grid-clean">
-                            <div class="data-panel-clean warm-bg">🌡️ <span>T° MÁX PROMEDIO</span> <span class="metric-value-clean" id="temp_max_avg">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean cold-bg">❄️ <span>T° MÍN PROMEDIO</span> <span class="metric-value-clean" id="temp_min_avg">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean rain-bg">💧 <span>PRECIPITACIÓN TOTAL</span> <span class="metric-value-clean" id="precip_sum">--</span> <span>mm</span></div>
+                            <div class="data-panel-clean warm-bg">🌡️ <span>T° MÁX DIARIA</span> <span class="metric-value-clean" id="temp_max_avg">--</span> <span>°C</span></div>
+                            <div class="data-panel-clean cold-bg">❄️ <span>T° MÍN DIARIA</span> <span class="metric-value-clean" id="temp_min_avg">--</span> <span>°C</span></div>
+                            <div class="data-panel-clean rain-bg">💧 <span>PRECIPITACIÓN SUMA</span> <span class="metric-value-clean" id="precip_sum">--</span> <span>mm</span></div>
                             <div class="data-panel-clean wind-bg">💨 <span>VIENTO MÁXIMO</span> <span class="metric-value-clean" id="wind_max">--</span> <span>km/h</span></div>
-                            <div class="data-panel-clean sun-bg">☀️ <span>RADIACIÓN SOLAR TOTAL</span> <span class="metric-value-clean" id="radiation_sum">--</span> <span>J/m²</span></div>
+                            <div class="data-panel-clean sun-bg">☀️ <span>RADIACIÓN SOLAR</span> <span class="metric-value-clean" id="radiation_sum">--</span> <span>J/m²</span></div>
                             <div class="data-panel-clean extreme-bg">🔥 <span>T° MÁX ABSOLUTA</span> <span class="metric-value-clean" id="temp_max_abs">--</span> <span>°C</span></div>
                             <div class="data-panel-clean extreme-bg">🥶 <span>T° MÍN ABSOLUTA</span> <span class="metric-value-clean" id="temp_min_abs">--</span> <span>°C</span></div>
                             <div class="data-panel-clean info-bg">🗓️ <span>DÍAS EN EL PERIODO</span> <span class="metric-value-clean" id="num_dias">--</span> <span>días</span></div>
@@ -79,8 +98,8 @@
             
             <hr>
 
-            <a href="{% url 'consulta_clima' %}" class="back-button">
-                ← Volver a Nueva Consulta
+            <a href="{% url 'resultados_detalle' %}" class="back-button">
+                ← Volver a Histórico Anual
             </a>
             
         </div>
@@ -90,27 +109,15 @@
         // Parámetros iniciales
         const params = {
             region_code: "{{ data.region_code|escapejs }}",
-            year: {{ data.año }},
             lat: {{ data.lat }},
             lon: {{ data.lon }},
             regionNombre: "{{ data.region_nombre|escapejs }}",
-            isHistorical: {% if data.is_historical %}true{% else %}false{% endif %},
-            forecastUrl: "{% url 'pronostico_detalle' %}", // ✅ Nueva URL de redirección
         };
 
-        // Variables de fecha del servidor
-        const CURRENT_YEAR = {{ current_year }};
-        const CURRENT_MONTH = {{ current_month }};
-        const LIMIT_DATE_STRING = "{{ limit_date|escapejs }}"; 
-
-        // Mapeo de meses para el slider (13 es "Actualidad")
-        const months = [
-            'Anual', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Actualidad'
-        ];
+        const TODAY_DATE_STRING = "{{ today_date_string|escapejs }}";
         
         // ----------------------------------------------------
-        // 1. Lógica del Mapa Leaflet
+        // Lógica del Mapa Leaflet
         // ----------------------------------------------------
         function initializeMap() {
              try {
@@ -129,99 +136,105 @@
         }
         
         // ----------------------------------------------------
-        // 2. Lógica del Slider AJAX (Optimizado y Corregido)
+        // Lógica del Slider de Días AJAX
         // ----------------------------------------------------
-        const monthSlider = document.getElementById('month-slider');
-        const monthLabel = document.getElementById('month-label');
+        const daySlider = document.getElementById('day-slider');
+        // ✅ Referencia a la nueva etiqueta dinámica (h3)
+        const dynamicPeriodHeader = document.getElementById('dynamic-period-header'); 
         const statsHeader = document.getElementById('stats-header');
         const loadingMessage = document.getElementById('loading-message');
         const errorMessage = document.getElementById('error-message');
 
+        /**
+         * Función auxiliar para calcular la fecha a partir del offset.
+         */
+        function calculateDate(offset) {
+            const today = new Date(TODAY_DATE_STRING);
+            today.setDate(today.getDate() + offset);
+            // Formato YYYY-MM-DD
+            return today.toISOString().split('T')[0]; 
+        }
+
+        /**
+         * Función auxiliar para generar el texto de encabezado según el offset.
+         * @param {number} daysOffset - Número de días de diferencia con respecto a hoy (0).
+         * @param {string} targetDate - Fecha en formato YYYY-MM-DD.
+         * @returns {string} El texto formateado.
+         */
+        function formatHeaderText(daysOffset, targetDate) {
+            if (daysOffset === 0) {
+                return `Hoy (${targetDate})`;
+            } else if (daysOffset < 0) {
+                return `Histórico ${Math.abs(daysOffset)} días atrás (${targetDate})`;
+            } else {
+                return `Pronóstico en ${daysOffset} días (${targetDate})`;
+            }
+        }
+
         function updateMetricsDisplay(metrics) {
-            // ... (Función de display se mantiene igual) ...
             const emptyValue = '--';
-            if (!metrics || metrics.temp_max_avg === '--') { 
+            if (!metrics || metrics.num_dias === undefined) { 
                 document.getElementById('temp_max_avg').textContent = emptyValue;
                 document.getElementById('temp_min_avg').textContent = emptyValue;
                 document.getElementById('precip_sum').textContent = emptyValue;
                 document.getElementById('wind_max').textContent = emptyValue;
                 document.getElementById('radiation_sum').textContent = emptyValue;
-                document.getElementById('temp_max_abs').textContent = emptyValue;
+                document.getElementById('temp_max_abs').textContent = emptyValue; 
                 document.getElementById('temp_min_abs').textContent = emptyValue;
                 document.getElementById('num_dias').textContent = emptyValue;
                 return;
             }
 
+            // Usamos toFixed(1) para todas las temperaturas y toFixed(1) para precipitación y viento, asumiendo una decimal
             document.getElementById('temp_max_avg').textContent = metrics.temp_max_avg.toFixed(1);
             document.getElementById('temp_min_avg').textContent = metrics.temp_min_avg.toFixed(1);
             document.getElementById('precip_sum').textContent = metrics.precip_sum.toFixed(1);
             document.getElementById('wind_max').textContent = metrics.wind_max.toFixed(1);
             document.getElementById('radiation_sum').textContent = metrics.radiation_sum.toFixed(1);
-            document.getElementById('temp_max_abs').textContent = metrics.temp_max_abs.toFixed(1);
-            document.getElementById('temp_min_abs').textContent = metrics.temp_min_abs.toFixed(1);
+            document.getElementById('temp_max_abs').textContent = metrics.temp_max_abs.toFixed(1); 
+            document.getElementById('temp_min_abs').textContent = metrics.temp_min_abs.toFixed(1); 
             document.getElementById('num_dias').textContent = metrics.num_dias;
         }
 
-        async function fetchData(monthValue) {
-            
-            // ✅ Redirección a la nueva URL si es "Actualidad" (valor 13)
-            if (monthValue === 13) {
-                window.location.href = params.forecastUrl;
-                return; 
-            }
-            // ----------------------------------------------------------------------
-            // Lógica de carga para Histórico (0 a 12)
-            // ----------------------------------------------------------------------
+        async function fetchDailyData(daysOffset) {
             
             loadingMessage.style.display = 'block';
             errorMessage.style.display = 'none';
 
-            let periodEnd = null; // Parámetro para limitar el final del historial
+            const url = "{% url 'fetch_pronostico_ajax' %}";
+            const targetDate = calculateDate(daysOffset);
             
-            if (params.year === CURRENT_YEAR) {
-                if (monthValue === 0 || (monthValue >= 1 && monthValue <= CURRENT_MONTH)) {
-                    // Limitamos el final al límite (hace 1 día, según configuración de views.py)
-                    periodEnd = LIMIT_DATE_STRING; 
-                } else if (monthValue > CURRENT_MONTH) {
-                    // Meses futuros del año actual
-                    errorMessage.textContent = `Error: Los datos históricos de ${months[monthValue]} de ${CURRENT_YEAR} aún no están disponibles (límite: ${LIMIT_DATE_STRING}).`;
-                    errorMessage.style.display = 'block';
-                    loadingMessage.style.display = 'none';
-                    updateMetricsDisplay(null);
-                    return; 
-                }
-            }
-
-
-            // 2. Construir la Petición AJAX
-            const url = "{% url 'fetch_clima_data_ajax' %}";
             const payload = {
                 region_code: params.region_code,
-                year: params.year,
-                month: monthValue, 
-                is_forecast: false, // Ahora siempre es falso, ya que el caso 13 redirige
-                period_end: periodEnd, 
+                days_offset: daysOffset, 
             };
             
-            monthLabel.textContent = `Cargando: ${months[monthValue]} (${params.year})`;
-            statsHeader.textContent = `Cargando Resumen ${months[monthValue]}`;
+            // Usar el nuevo formato para el mensaje de carga
+            const loadingText = formatHeaderText(daysOffset, targetDate);
+            dynamicPeriodHeader.textContent = `Cargando: ${loadingText}`;
+            statsHeader.textContent = `Cargando Resumen Diario (${targetDate})`;
 
 
             try {
                 const response = await fetch(url, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        // CSRF token es necesario si no se usa csrf_exempt o si se usa en producción
+                        // 'X-CSRFToken': getCookie('csrftoken') // Si se incluye, necesitas la función getCookie
+                    },
                     body: JSON.stringify(payload)
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    monthLabel.textContent = `Periodo: ${data.periodo_label}`;
-                    statsHeader.textContent = `📊 Resumen ${data.periodo_label}`;
+                    // Actualiza la etiqueta con el texto final formateado
+                    dynamicPeriodHeader.textContent = formatHeaderText(daysOffset, targetDate); 
+                    statsHeader.textContent = `📊 Resumen ${formatHeaderText(daysOffset, targetDate)}`;
                     updateMetricsDisplay(data.metrics);
                 } else {
-                    errorMessage.textContent = data.message || "Error al obtener datos de la API. Intenta otro periodo.";
+                    errorMessage.textContent = data.message || "Error al obtener datos de la API. Intenta otro día.";
                     errorMessage.style.display = 'block';
                     updateMetricsDisplay(null); 
                 }
@@ -237,32 +250,31 @@
         }
 
         /**
-         * Listener 'input' (mientras se arrastra)
+         * Listener 'input' (mientras se arrastra) - ACTUALIZA SOLO EL TEXTO
          */
-        monthSlider.addEventListener('input', (event) => {
-            const value = parseInt(event.target.value);
-            if (value === 13) {
-                monthLabel.textContent = `Periodo: Actualidad`;
-                statsHeader.textContent = `📊 Resumen Pronóstico`;
-            } else {
-                monthLabel.textContent = `Periodo: ${months[value]} (${params.year})`;
-                statsHeader.textContent = `📊 Resumen ${months[value]}`;
-            }
+        daySlider.addEventListener('input', (event) => {
+            const daysOffset = parseInt(event.target.value);
+            const targetDate = calculateDate(daysOffset);
+            
+            // ✅ Usa el nuevo formato dinámico
+            const labelText = formatHeaderText(daysOffset, targetDate);
+            
+            dynamicPeriodHeader.textContent = labelText;
+            statsHeader.textContent = `📊 Resumen ${labelText}`;
         });
 
         /**
-         * Listener 'change' (cuando se suelta)
-         * Llama a la función de obtención de datos o redirige.
+         * Listener 'change' (cuando se suelta) - LLAMA A LA API
          */
-        monthSlider.addEventListener('change', (event) => {
-            const value = parseInt(event.target.value);
-            fetchData(value);
+        daySlider.addEventListener('change', (event) => {
+            const daysOffset = parseInt(event.target.value);
+            fetchDailyData(daysOffset);
         });
 
-        // Cargar datos iniciales al entrar a la página (Anual) y el mapa
+        // Cargar datos iniciales al entrar a la página (Hoy, offset 0) y el mapa
         document.addEventListener('DOMContentLoaded', () => {
             initializeMap();         // Inicializa el mapa
-            fetchData(0);            // Cargar datos anuales (mes 0)
+            fetchDailyData(0);       // Cargar datos de Hoy
         });
 
     </script>
