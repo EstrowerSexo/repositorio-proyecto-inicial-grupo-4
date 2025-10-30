@@ -39,23 +39,23 @@ REGION_COORDS = {
     'MAGALLANES': (-53.16, -70.91),     
 }
 
-REGION_BACKGROUNDS = {
-    'ARICA': 'arica_desierto.jpg',
-    'TARAPACA': 'tarapaca_costa.jpg',
-    'ANTOFAGASTA': 'antofagasta_desierto.jpg',
-    'ATACAMA': 'atacama_florido.jpg',
-    'COQUIMBO': 'coquimbo_valle.jpg',
-    'VALPARAISO': 'valparaiso_puerto.jpg',
-    'METROPOLITANA': 'santiago_skyline.jpg',
-    'OHIGGINS': 'ohiggins_viñedo.jpg',
-    'MAULE': 'maule_campo.jpg',
-    'NUBLE': 'ñuble_montaña.jpg',
-    'BIOBIO': 'biobio_rio.jpg',
-    'ARAUCANIA': 'araucania_volcan.jpg',
-    'RIOS': 'rios_valdivia.jpg',
-    'LAGOS': 'lagos_osorno.jpg',
-    'AYSEN': 'aysen_glaciar.jpg',
-    'MAGALLANES': 'magallanes_pinguinos.jpg',
+REGION_BACKGROUNDS = {  #editar nombres de imagenes!!!
+    'ARICA': 'black.jpg',
+    'TARAPACA': 'black.jpg',
+    'ANTOFAGASTA': 'black.jpg',
+    'ATACAMA': 'black.jpg',
+    'COQUIMBO': 'black.jpg',
+    'VALPARAISO': 'black.jpg',
+    'METROPOLITANA': 'black.jpg',
+    'OHIGGINS': 'black.jpg',
+    'MAULE': 'black.jpg',
+    'NUBLE': 'black.jpg',
+    'BIOBIO': 'black.jpg',
+    'ARAUCANIA': 'black.jpg',
+    'RIOS': 'black.jpg',
+    'LAGOS': 'black.jpg',
+    'AYSEN': 'black.jpg',
+    'MAGALLANES': 'black.jpg',
 }
 def resultados_detalle_view(request):
     clima_params = request.session.get('clima_params', None)
