@@ -42,7 +42,7 @@ REGION_COORDS = {
 REGION_BACKGROUNDS = {  #editar nombres de imagenes y añadir las imagenes a la carpeta statics/img cn los mismos nombres y en jpg!!!
     'ARICA': 'ARICA.jpg',
     'TARAPACA': 'TARAPACA.jpg',
-    'ANTOFAGASTA': 'ANTOFAGASTA.jpg',
+    'ANTOFAGASTA': 'ANTOGASTA.jpg',
     'ATACAMA': 'ATACAMA.jpg',
     'COQUIMBO': 'COQUIMBO.jpg',
     'VALPARAISO': 'VALPARAISO.jpg',
