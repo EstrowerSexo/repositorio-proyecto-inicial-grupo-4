@@ -1,1 +1,41 @@
+# Archivos de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales
+venv/
+.env/
+.env.bak/
+.venv/
+
+# Archivos de base de datos locales
+db.sqlite3
+
+# Archivos de configuración o credenciales
+*.env
+*.secret
+settings_local.py
+
+# Archivos de logs
+*.log
+logs/
+
+# Archivos temporales o de compilación
+*.bak
+*.swp
+*.tmp
 .DS_Store
+Thumbs.db
+
+# Archivos de IDE o editor
+.vscode/
+.idea/
+*.code-workspace
+
+# Archivos de pytest, coverage, etc.
+.coverage
+*.coverage
+*.spec
+htmlcov/
+pytest_cache/
