@@ -91,18 +91,19 @@ def calculate_metrics(daily_data):
     precips = daily_data.get('precipitation_sum', [])
     wind_speeds = daily_data.get('wind_speed_10m_max', [])
     radiation = daily_data.get('shortwave_radiation_sum', [])
-    
+    humidity_max = daily_data.get('relative_humidity_2m_max', [])   
     num_days = len(times)
     
     if num_days == 0:
         return None 
-        
+    
+    # Cálculo de métricas
     temp_max_avg = round(sum(temps_max) / num_days, 1) if temps_max else 0.0
     temp_min_avg = round(sum(temps_min) / num_days, 1) if temps_min else 0.0
-    
     precip_sum = round(sum(precips), 1) if precips else 0.0
     wind_max = round(max(wind_speeds), 1) if wind_speeds else 0.0
     radiation_sum = round(sum(radiation), 1) if radiation else 0.0
+    humidity_max_abs = round(max(humidity_max), 0) if humidity_max else 0.0
 
     return {
         'num_dias': num_days,
@@ -113,6 +114,7 @@ def calculate_metrics(daily_data):
         'radiation_sum': radiation_sum,
         'temp_max_abs': round(max(temps_max), 1) if temps_max else 0.0,
         'temp_min_abs': round(min(temps_min), 1) if temps_min else 0.0,
+        'humidity_max_abs': humidity_max_abs,
     }
 
 
@@ -287,8 +289,8 @@ def fetch_clima_data_ajax(request):
         'longitude': lon,
         'start_date': start_date,
         'end_date': end_date, 
-        'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum', 
-        'timezone': 'auto' 
+        'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum,relative_humidity_2m_max', 
+        'timezone': 'auto'
     }
 
     # 3. Solicitud a la API
@@ -317,6 +319,43 @@ def fetch_clima_data_ajax(request):
         return JsonResponse({'success': False, 'message': f'Error API: El servidor externo devolvió un error ({response.status_code}).'}, status=500)
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error inesperado del servidor: {e}'}, status=500)
+    
+# ==============================================================================
+# FUNCIÓN AUXILIAR: Extracción de Temperaturas por Hora (12 PM y 6 PM)
+# ==============================================================================
+def extract_hourly_temps(api_data):
+    """
+    Busca la temperatura a las 12:00 (mediodía) y 18:00 (tarde) en los datos horarios.
+    """
+    hourly_data = api_data.get('hourly', {})
+    hourly_time = hourly_data.get('time', [])
+    hourly_temp = hourly_data.get('temperature_2m', [])
+    
+    if not hourly_time or not hourly_temp:
+        return None
+
+    # Las horas están en formato 'YYYY-MM-DDTHH:00'. Buscamos los índices de 12:00 y 18:00.
+    temp_12pm = 0.0
+    temp_6pm = 0.0
+    
+    found_12 = False
+    found_18 = False
+    
+    for i, t in enumerate(hourly_time):
+        if t.endswith('T12:00'):
+            temp_12pm = round(hourly_temp[i], 1)
+            found_12 = True 
+        elif t.endswith('T18:00'):
+            temp_6pm = round(hourly_temp[i], 1)
+            found_18 = True
+            
+        if found_12 and found_18:
+            break
+
+    return {
+        'temp_12pm': temp_12pm,
+        'temp_6pm': temp_6pm,
+    }
 
 
 # ==============================================================================
@@ -367,6 +406,7 @@ def fetch_pronostico_ajax(request):
         API_URL = "https://api.open-meteo.com/v1/forecast"
         start_date = target_date_string
         end_date = target_date_string 
+        periodo_label = target_date.strftime('%Y-%m-%d')
         
         if days_offset == 0:
             periodo_label = f"Actualidad: {target_date_string}"
@@ -382,31 +422,39 @@ def fetch_pronostico_ajax(request):
         'longitude': lon,
         'start_date': start_date,
         'end_date': end_date, 
-        'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum', 
-        'timezone': 'auto' 
+        'hourly': 'temperature_2m',
+        'daily': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum,relative_humidity_2m_max', 
+        'timezone': 'auto'
     }
 
     # 3. Solicitud a la API
     try:
         response = requests.get(API_URL, params=params)
         response.raise_for_status() 
-        api_data = response.json()      
+        api_data = response.json()
         
-        # 4. Procesar la respuesta (Solo un día de datos)
-        if api_data.get('daily') and len(api_data['daily']['time']) > 0:
-            # La función calculate_metrics puede seguir usándose, aunque solo procesará 1 día.
-            metrics = calculate_metrics(api_data['daily'])
+        # 4. Procesar la respuesta
+        # Ahora necesitamos enviar ambos datos: hourly y daily
+        
+        # Enviar el diccionario completo para que la función calculate_metrics pueda extraer lo que necesita
+        # Y la nueva función auxiliar pueda extraer la temperatura por hora
+        metrics = extract_hourly_temps(api_data) # <--- Usaremos una nueva función
+        
+        # Añadir las métricas diarias existentes (para precipitación, viento, extremos)
+        # Reutilizamos la función calculate_metrics para obtener las métricas diarias
+        daily_metrics = calculate_metrics(api_data.get('daily', {}))
+        
+        if metrics and daily_metrics:
+            # Combinar los dos diccionarios
+            final_metrics = {**metrics, **daily_metrics}
             
-            if metrics:
-                # 5. Devolver las métricas para un día específico
-                return JsonResponse({
-                    'success': True,
-                    'periodo_label': periodo_label,
-                    'metrics': metrics,
-                    'is_forecast_result': is_forecast_result
-                })
-            else:
-                return JsonResponse({'success': False, 'message': 'API no devolvió datos para la fecha seleccionada.'}, status=404)
+            # 5. Devolver las métricas
+            return JsonResponse({
+                'success': True,
+                'periodo_label': periodo_label,
+                'metrics': final_metrics,
+                'is_forecast_result': is_forecast_result
+            })
         else:
             return JsonResponse({'success': False, 'message': 'API no devolvió datos para la fecha seleccionada.'}, status=404)
             
@@ -414,3 +462,5 @@ def fetch_pronostico_ajax(request):
         return JsonResponse({'success': False, 'message': f'Error API: El servidor externo devolvió un error ({response.status_code}).'}, status=500)
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error inesperado del servidor: {e}'}, status=500)
+    
+    

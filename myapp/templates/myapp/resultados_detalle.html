@@ -58,14 +58,15 @@
                         <h2 id="stats-header">📊 Resumen Anual</h2> 
                         
                         <div class="metric-grid-clean">
-                            <div class="data-panel-clean warm-bg">🌡️ <span>T° MÁX PROMEDIO</span> <span class="metric-value-clean" id="temp_max_avg">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean cold-bg">❄️ <span>T° MÍN PROMEDIO</span> <span class="metric-value-clean" id="temp_min_avg">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean rain-bg">💧 <span>PRECIPITACIÓN TOTAL</span> <span class="metric-value-clean" id="precip_sum">--</span> <span>mm</span></div>
-                            <div class="data-panel-clean wind-bg">💨 <span>VIENTO MÁXIMO</span> <span class="metric-value-clean" id="wind_max">--</span> <span>km/h</span></div>
-                            <div class="data-panel-clean sun-bg">☀️ <span>RADIACIÓN SOLAR TOTAL</span> <span class="metric-value-clean" id="radiation_sum">--</span> <span>J/m²</span></div>
-                            <div class="data-panel-clean extreme-bg">🔥 <span>T° MÁX ABSOLUTA</span> <span class="metric-value-clean" id="temp_max_abs">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean extreme-bg">🥶 <span>T° MÍN ABSOLUTA</span> <span class="metric-value-clean" id="temp_min_abs">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean info-bg">🗓️ <span>DÍAS EN EL PERIODO</span> <span class="metric-value-clean" id="num_dias">--</span> <span>días</span></div>
+                             <div class="data-panel-clean warm-bg">🌡️ <span>T° MÁX DIARIA</span> <span class="metric-value-clean" id="temp_max_avg">--</span> <span>°C</span></div>
+                             <div class="data-panel-clean cold-bg">❄️ <span>T° MÍN DIARIA</span> <span class="metric-value-clean" id="temp_min_avg">--</span> <span>°C</span></div>
+                             <div class="data-panel-clean rain-bg">💧 <span>PRECIPITACIÓN SUMA</span> <span class="metric-value-clean" id="precip_sum">--</span> <span>mm</span></div>
+                             <div class="data-panel-clean moisture-bg">💦 <span>HUMEDAD MÁXIMA</span> <span class="metric-value-clean" id="humidity_max_abs">--</span> <span>%</span></div>                          
+                             <div class="data-panel-clean wind-bg">💨 <span>VIENTO MÁXIMO</span> <span class="metric-value-clean" id="wind_max">--</span> <span>km/h</span></div>
+                             <div class="data-panel-clean sun-bg">☀️ <span>RADIACIÓN SOLAR</span> <span class="metric-value-clean" id="radiation_sum">--</span> <span>J/m²</span></div>
+                             <div class="data-panel-clean extreme-bg">🔥 <span>T° MÁX ABSOLUTA</span> <span class="metric-value-clean" id="temp_max_abs">--</span> <span>°C</span></div>
+                             <div class="data-panel-clean extreme-bg">🥶 <span>T° MÍN ABSOLUTA</span> <span class="metric-value-clean" id="temp_min_abs">--</span> <span>°C</span></div>
+                             <div class="data-panel-clean info-bg">🗓️ <span>DÍAS EN EL PERIODO</span> <span class="metric-value-clean" id="num_dias">--</span> <span>días</span></div> 
                         </div>
                         
                         <p id="loading-message" style="text-align: center; color: #007bff; margin-top: 20px; font-weight: 600; display: none;">Cargando datos...</p>
@@ -148,6 +149,7 @@
                 document.getElementById('temp_max_abs').textContent = emptyValue;
                 document.getElementById('temp_min_abs').textContent = emptyValue;
                 document.getElementById('num_dias').textContent = emptyValue;
+                document.getElementById('humidity_max_abs').textContent = emptyValue;
                 return;
             }
 
@@ -159,6 +161,7 @@
             document.getElementById('temp_max_abs').textContent = metrics.temp_max_abs.toFixed(1);
             document.getElementById('temp_min_abs').textContent = metrics.temp_min_abs.toFixed(1);
             document.getElementById('num_dias').textContent = metrics.num_dias;
+            document.getElementById('humidity_max_abs').textContent = metrics.humidity_max_abs.toFixed(0);
         }
 
         async function fetchData(monthValue) {

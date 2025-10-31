@@ -76,16 +76,16 @@
                         <h2 id="stats-header">📊 Resumen Diario</h2> 
                         
                         <div class="metric-grid-clean">
-                            <div class="data-panel-clean warm-bg">🌡️ <span>T° MÁX DIARIA</span> <span class="metric-value-clean" id="temp_max_avg">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean cold-bg">❄️ <span>T° MÍN DIARIA</span> <span class="metric-value-clean" id="temp_min_avg">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean rain-bg">💧 <span>PRECIPITACIÓN SUMA</span> <span class="metric-value-clean" id="precip_sum">--</span> <span>mm</span></div>
-                            <div class="data-panel-clean wind-bg">💨 <span>VIENTO MÁXIMO</span> <span class="metric-value-clean" id="wind_max">--</span> <span>km/h</span></div>
-                            <div class="data-panel-clean sun-bg">☀️ <span>RADIACIÓN SOLAR</span> <span class="metric-value-clean" id="radiation_sum">--</span> <span>J/m²</span></div>
-                            <div class="data-panel-clean extreme-bg">🔥 <span>T° MÁX ABSOLUTA</span> <span class="metric-value-clean" id="temp_max_abs">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean extreme-bg">🥶 <span>T° MÍN ABSOLUTA</span> <span class="metric-value-clean" id="temp_min_abs">--</span> <span>°C</span></div>
-                            <div class="data-panel-clean info-bg">🗓️ <span>DÍAS EN EL PERIODO</span> <span class="metric-value-clean" id="num_dias">--</span> <span>días</span></div>
+                             <div class="data-panel-clean warm-bg">🌡️ <span>T° MEDIODÍA (12PM)</span> <span class="metric-value-clean" id="temp_12pm">--</span> <span>°C</span></div>
+                             <div class="data-panel-clean cold-bg">❄️ <span>T° TARDE (6PM)</span> <span class="metric-value-clean" id="temp_6pm">--</span> <span>°C</span></div>
+                             <div class="data-panel-clean rain-bg">💧 <span>PRECIPITACIÓN SUMA</span> <span class="metric-value-clean" id="precip_sum">--</span> <span>mm</span></div>
+                             <div class="data-panel-clean moisture-bg">💦 <span>HUMEDAD MÁXIMA</span> <span class="metric-value-clean" id="humidity_max_abs">--</span> <span>%</span></div>                          
+                             <div class="data-panel-clean wind-bg">💨 <span>VIENTO MÁXIMO</span> <span class="metric-value-clean" id="wind_max">--</span> <span>km/h</span></div>
+                             <div class="data-panel-clean sun-bg">☀️ <span>RADIACIÓN SOLAR</span> <span class="metric-value-clean" id="radiation_sum">--</span> <span>J/m²</span></div>
+                             <div class="data-panel-clean extreme-bg">🔥 <span>T° MÁX ABSOLUTA</span> <span class="metric-value-clean" id="temp_max_abs">--</span> <span>°C</span></div>
+                             <div class="data-panel-clean extreme-bg">🥶 <span>T° MÍN ABSOLUTA</span> <span class="metric-value-clean" id="temp_min_abs">--</span> <span>°C</span></div>
+                             <div class="data-panel-clean info-bg">🗓️ <span>DÍAS EN EL PERIODO</span> <span class="metric-value-clean" id="num_dias">--</span> <span>días</span></div> 
                         </div>
-                        
                         <p id="loading-message" style="text-align: center; color: #007bff; margin-top: 20px; font-weight: 600; display: none;">Cargando datos...</p>
                         <p id="error-message" style="text-align: center; color: #dc3545; margin-top: 20px; font-weight: 600; display: none;">Error al cargar los datos.</p>
                         
@@ -172,26 +172,28 @@
         function updateMetricsDisplay(metrics) {
             const emptyValue = '--';
             if (!metrics || metrics.num_dias === undefined) { 
-                document.getElementById('temp_max_avg').textContent = emptyValue;
-                document.getElementById('temp_min_avg').textContent = emptyValue;
+                document.getElementById('temp_12pm').textContent = emptyValue; 
+                document.getElementById('temp_6pm').textContent = emptyValue; 
                 document.getElementById('precip_sum').textContent = emptyValue;
                 document.getElementById('wind_max').textContent = emptyValue;
                 document.getElementById('radiation_sum').textContent = emptyValue;
                 document.getElementById('temp_max_abs').textContent = emptyValue; 
                 document.getElementById('temp_min_abs').textContent = emptyValue;
                 document.getElementById('num_dias').textContent = emptyValue;
+                document.getElementById('humidity_max_abs').textContent = emptyValue;
                 return;
             }
 
             // Usamos toFixed(1) para todas las temperaturas y toFixed(1) para precipitación y viento, asumiendo una decimal
-            document.getElementById('temp_max_avg').textContent = metrics.temp_max_avg.toFixed(1);
-            document.getElementById('temp_min_avg').textContent = metrics.temp_min_avg.toFixed(1);
+            document.getElementById('temp_12pm').textContent = metrics.temp_12pm.toFixed(1); 
+            document.getElementById('temp_6pm').textContent = metrics.temp_6pm.toFixed(1); 
             document.getElementById('precip_sum').textContent = metrics.precip_sum.toFixed(1);
             document.getElementById('wind_max').textContent = metrics.wind_max.toFixed(1);
             document.getElementById('radiation_sum').textContent = metrics.radiation_sum.toFixed(1);
             document.getElementById('temp_max_abs').textContent = metrics.temp_max_abs.toFixed(1); 
             document.getElementById('temp_min_abs').textContent = metrics.temp_min_abs.toFixed(1); 
             document.getElementById('num_dias').textContent = metrics.num_dias;
+            document.getElementById('humidity_max_abs').textContent = metrics.humidity_max_abs.toFixed(0);
         }
 
         async function fetchDailyData(daysOffset) {
