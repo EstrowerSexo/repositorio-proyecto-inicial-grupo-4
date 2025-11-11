@@ -11,7 +11,7 @@ from django.db import models # Módulo base de modelos (para interactuar con la 
 REGIONES_CHOICES = [
     ('ARICA', 'XV - Arica y Parinacota'),
     ('TARAPACA', 'I - Tarapacá'),
-    ('ANTOFAGASTA', 'II - Antofagagasta'),
+    ('ANTOFAGASTA', 'II - Antofagasta'),
     ('ATACAMA', 'III - Atacama'),
     ('COQUIMBO', 'IV - Coquimbo'),
     ('VALPARAISO', 'V - Valparaíso'),
