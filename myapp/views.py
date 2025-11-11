@@ -15,7 +15,7 @@ from django.views.decorators.csrf import csrf_exempt
 from .forms import ClimaSearchForm       
 from .models import REGIONES_CHOICES, RegistroClima 
 from django.db.models import ObjectDoesNotExist 
-
+today = date.today()
 # ==============================================================================
 # MAPEO DE DATOS (COORDENADAS) Y FONDOS REGIONALES (SE MANTIENEN IGUALES)
 # ==============================================================================
@@ -123,43 +123,48 @@ def calculate_metrics(daily_data):
 # ==============================================================================
 def clima_view(request):
     """
-    Maneja el formulario de búsqueda. Si es exitoso, guarda datos básicos en sesión
-    y redirige a resultados_detalle_view.
+    Maneja el formulario de búsqueda.
+    Usa el año ingresado por el usuario, no un valor fijo.
     """
-    
-    current_year = date.today().year
-    form = ClimaSearchForm(initial={'año': current_year}) 
+    form = ClimaSearchForm()
     mensaje_error = None
-    
+
     if request.method == 'POST':
-        form = ClimaSearchForm(request.POST) 
-        
+        form = ClimaSearchForm(request.POST)
+
         if form.is_valid():
             region_code = form.cleaned_data['region']
             año_buscado = form.cleaned_data['año']
-            
-            lat, lon = REGION_COORDS.get(region_code)
-            region_nombre = dict(REGIONES_CHOICES).get(region_code)
-            
-            # Guardamos los parámetros necesarios para la llamada AJAX.
-            request.session['clima_params'] = {
-                'region_nombre': region_nombre,
-                'region_code': region_code,
-                'año': año_buscado,
-                'lat': lat,                 
-                'lon': lon,                 
-                'imagen_fondo': REGION_BACKGROUNDS.get(region_code, 'default_background.jpg'), 
-                'is_historical': (año_buscado < current_year), 
-            }
-            
-            return redirect('resultados_detalle')
+
+            # Validar que sea numérico y razonable
+            try:
+                año_buscado = int(año_buscado)
+                if año_buscado < 1950 or año_buscado > date.today().year:
+                    mensaje_error = "Ingrese un año válido (entre 1950 y el actual)."
+            except (ValueError, TypeError):
+                mensaje_error = "Ingrese un año numérico válido."
+
+            if not mensaje_error:
+                lat, lon = REGION_COORDS.get(region_code)
+                region_nombre = dict(REGIONES_CHOICES).get(region_code)
+
+                request.session['clima_params'] = {
+                    'region_nombre': region_nombre,
+                    'region_code': region_code,
+                    'año': año_buscado,
+                    'lat': lat,
+                    'lon': lon,
+                    'imagen_fondo': REGION_BACKGROUNDS.get(region_code, 'default_background.jpg'),
+                    'is_historical': (año_buscado < date.today().year),
+                }
+
+                return redirect('resultados_detalle')
 
     context = {
-        'form': form,                       
-        'regiones': REGIONES_CHOICES,       
-        'mensaje_error': mensaje_error,     
+        'form': form,
+        'regiones': REGIONES_CHOICES,
+        'mensaje_error': mensaje_error,
     }
-    
     return render(request, 'myapp/consulta_clima.html', context)
 
 
@@ -169,6 +174,7 @@ def clima_view(request):
 def resultados_detalle_view(request):
     """
     Función que recupera los parámetros de clima de la sesión y muestra la plantilla.
+    Usa el año elegido en el formulario (no fuerza el año actual).
     Prepara la fecha límite para el historial (1 día atrás).
     """
     
@@ -179,24 +185,27 @@ def resultados_detalle_view(request):
 
     # CÁLCULO DE FECHAS EN EL SERVIDOR
     today = date.today()
-    
-    # 🚨 Se establece a 1 día, según lo confirmado por el usuario
     DAYS_DIFFERENCE = 1 
-    
     n_days_ago = today - timedelta(days=DAYS_DIFFERENCE)
     limit_date_string = n_days_ago.strftime('%Y-%m-%d')
+
+    # ✅ Tomar el año desde la sesión si existe
+    year_from_form = clima_params.get('año')
+    if year_from_form:
+        current_year = int(year_from_form)
+    else:
+        current_year = today.year  # fallback por seguridad
     
     # Preparamos el contexto
     context = {
         'data': clima_params,
-        'current_year': today.year,
+        'current_year': current_year,     # ✅ ahora usa el año ingresado
         'current_month': today.month, 
-        'limit_date': limit_date_string, # Enviamos la fecha límite (hace 1 día)
-        'forecast_url': 'pronostico_detalle' # URL de redirección
+        'limit_date': limit_date_string,  # Enviamos la fecha límite (hace 1 día)
+        'forecast_url': 'pronostico_detalle'
     }
     
     return render(request, 'myapp/resultados_detalle.html', context)
-
 
 # ==============================================================================
 # ✅ NUEVA VISTA DE DETALLE (pronostico_detalle_view) - Diario/Forecast
@@ -258,30 +267,30 @@ def fetch_clima_data_ajax(request):
     API_URL = "https://archive-api.open-meteo.com/v1/archive" 
 
     # 2a. Definir Fechas de Inicio y Fin basadas en el mes para el ARCHIVE
-    if month == 0: # Anual
-        start_date = f"{year}-01-01"
-        end_date = period_end_limit if period_end_limit else f"{year}-12-31" 
+    if month == 0:
+        # Año completo solicitado
+        start_date = date(year, 1, 1)
+        end_date = date(year, 12, 31)
         periodo_label = f"Anual ({year})"
-    
-    else: # Mensual
-        start_date = f"{year}-{month:02d}-01"
-        
-        _, last_day = monthrange(year, month) 
-        end_date_default = date(year, month, last_day).strftime('%Y-%m-%d')
-        end_date = end_date_default
-        
-        # COMPROBACIÓN CLAVE: Aplicar el límite de fecha (hace 1 día)
-        if period_end_limit:
-            limit_date_obj = date.fromisoformat(period_end_limit)
-            end_date_obj = date.fromisoformat(end_date_default)
-            start_date_obj = date.fromisoformat(start_date)
+    else:
+        # Mes específico solicitado
+        last_day = monthrange(year, month)[1]
+        start_date = date(year, month, 1)
+        end_date = date(year, month, last_day)
+        periodo_label = start_date.strftime('%B').capitalize()
 
-            if end_date_obj > limit_date_obj and start_date_obj <= limit_date_obj:
-                end_date = period_end_limit
-            elif start_date_obj > limit_date_obj:
-                return JsonResponse({'success': False, 'message': f'El mes {month} aún no tiene datos históricos disponibles (límite: {period_end_limit}).'}, status=404)
+    # === Solo recortar el rango si se trata del año o mes actual ===
+    if period_end_limit:
+        limit_obj = date.fromisoformat(period_end_limit)
 
-        periodo_label = date(year, month, 1).strftime('%B').capitalize() 
+        # Si pidieron el año actual, recortar hasta ayer
+        if month == 0:
+            if year == today.year and end_date > limit_obj:
+                end_date = limit_obj
+        # Si pidieron el mes actual dentro del año actual, recortar hasta ayer
+        else:
+            if year == today.year and month == today.month and end_date > limit_obj:
+                end_date = limit_obj
 
     # Parámetros para el Archive
     params = {
