@@ -2,281 +2,205 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLIMA CHILE - Pronóstico Diario</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>CLIMA CHILE - Pronóstico</title>
 
-    <link rel="stylesheet" href="{% static 'css/detalle.css' %}"> 
-    
-    <style>
-        /* Estilos específicos para el slider de días */
-        .day-slider-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.8rem;
-            color: #555;
-            margin-top: 5px;
-        }
-        .day-slider-labels span:nth-child(2) {
-            font-weight: bold;
-            color: #007bff;
-        }
-        
-        /* Estilo para la etiqueta superior (Ahora es un <h3>) */
-        #dynamic-period-header {
-            text-align: center;
-            margin-bottom: 15px; 
-            font-weight: 700;
-            color: #333;
-            font-size: 1.1rem;
-        }
-    </style>
+  <!-- CSS global del proyecto -->
+  <link rel="stylesheet" href="{% static 'css/detalle.css' %}">
+
+  <!-- Ajustes visuales específicos (mismos que resultados) -->
+  <style>
+    .btn-clean{
+      display:inline-block;
+      padding:12px 18px;
+      background:#101318; color:#fff;
+      border:0; border-radius:8px;
+      font-weight:700; cursor:pointer; text-decoration:none;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);
+      transition:background .2s ease, transform .05s ease;
+    }
+    .btn-clean:hover{ background:#2a3b4f; }
+    .btn-clean:active{ transform:translateY(1px); }
+    .btn-clean:disabled{ opacity:.5; cursor:not-allowed; }
+
+    .btn-lg{ padding:14px 22px; font-size:1rem; }
+
+    .mode-switch{ display:inline-flex; border-radius:10px; overflow:hidden; }
+    .mode-switch a, .mode-switch button{
+      padding:12px 18px; background:#101318; color:#fff;
+      border:none; font-weight:700; cursor:pointer; text-decoration:none;
+    }
+    .mode-switch button.active{ background:#2a3b4f; }
+    .mode-switch a:hover, .mode-switch button:not(.active):hover{ background:#2a3b4f; }
+
+    .controls-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 14px; }
+
+    /* Chips para offsets */
+    .pill{
+      padding:8px 12px; border-radius:999px;
+      background:#fff; color:#333; border:1px solid #e1e5ee; cursor:pointer; font-weight:700;
+      box-shadow:0 1px 4px rgba(0,0,0,.08);
+      user-select:none;
+    }
+    .pill.active{ background:#2a3b4f; color:#fff; border-color:#2a3b4f; }
+
+    .footer-spacer{ height:30px; }
+  </style>
+
+  <!-- Leaflet (mapa) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 </head>
 
-<body style="background-image: url('{% static "img/"|add:data.imagen_fondo %}'); background-size: cover; background-position: center; background-attachment: fixed;">
-    
-    <div class="card-container">
-        <div class="card-detalle"> 
-            
-            <div class="header-detalle">
-                <h1>CLIMA CHILE - Pronóstico y Datos Recientes</h1>
-                <p class="subtitle">Análisis Diario - Región de {{ data.region_nombre }}</p>
-            </div>
-            
-            <div class="content-grid">
-                
-                <div class="left-column">
-                    <h2>🗺️ Ubicación Geográfica</h2>
-                    
-                    <div id="mapid" class="map-section"></div>
-                    
-                    <div class="slider-container">
-                        <h3 style="margin-bottom: 10px;">Selección de Día (-14 a +14)</h3>
-                        
-                        <h3 id="dynamic-period-header">Cargando...</h3> 
+<body style="background-image: url('{% static 'img/' %}{{ data.imagen_fondo }}'); background-size: cover; background-position: center;">
+  <div class="card-container">
+    <div class="card-detalle">
 
-                        <input type="range" id="day-slider" min="-14" max="14" value="0" step="1">
-                        
-                        <div class="day-slider-labels"> 
-                            <span>-14 días (Histórico)</span>
-                            <span>Hoy</span>
-                            <span style="float: right;">+14 días (Pronóstico)</span>
-                        </div>
-                    </div>
+      <!-- Encabezado -->
+      <div class="header-detalle">
+        <h1>CLIMA CHILE - Pronóstico y Datos Recientes</h1>
+        <div class="subtitle">Análisis Diario - Región de {{ data.region_nombre }}</div>
+      </div>
 
-                    </div>
-                
-                <div class="stats-section">
-                    <div class="stats-scroll-container">
-                        <h2 id="stats-header">📊 Resumen Diario</h2> 
-                        
-                        <div class="metric-grid-clean">
-                             <div class="data-panel-clean warm-bg">🌡️ <span>T° MEDIODÍA (12PM)</span> <span class="metric-value-clean" id="temp_12pm">--</span> <span>°C</span></div>
-                             <div class="data-panel-clean cold-bg">❄️ <span>T° TARDE (6PM)</span> <span class="metric-value-clean" id="temp_6pm">--</span> <span>°C</span></div>
-                             <div class="data-panel-clean rain-bg">💧 <span>PRECIPITACIÓN SUMA</span> <span class="metric-value-clean" id="precip_sum">--</span> <span>mm</span></div>
-                             <div class="data-panel-clean moisture-bg">💦 <span>HUMEDAD MÁXIMA</span> <span class="metric-value-clean" id="humidity_max_abs">--</span> <span>%</span></div>                          
-                             <div class="data-panel-clean wind-bg">💨 <span>VIENTO MÁXIMO</span> <span class="metric-value-clean" id="wind_max">--</span> <span>km/h</span></div>
-                             <div class="data-panel-clean sun-bg">☀️ <span>RADIACIÓN SOLAR</span> <span class="metric-value-clean" id="radiation_sum">--</span> <span>J/m²</span></div>
-                             <div class="data-panel-clean extreme-bg">🔥 <span>T° MÁX ABSOLUTA</span> <span class="metric-value-clean" id="temp_max_abs">--</span> <span>°C</span></div>
-                             <div class="data-panel-clean extreme-bg">🥶 <span>T° MÍN ABSOLUTA</span> <span class="metric-value-clean" id="temp_min_abs">--</span> <span>°C</span></div>
-                             <div class="data-panel-clean info-bg">🗓️ <span>DÍAS EN EL PERIODO</span> <span class="metric-value-clean" id="num_dias">--</span> <span>días</span></div> 
-                        </div>
-                        <p id="loading-message" style="text-align: center; color: #007bff; margin-top: 20px; font-weight: 600; display: none;">Cargando datos...</p>
-                        <p id="error-message" style="text-align: center; color: #dc3545; margin-top: 20px; font-weight: 600; display: none;">Error al cargar los datos.</p>
-                        
-                        <p style="font-size: 0.8rem; color: #000000ff; text-align: right; margin-top: 30px;">Fuente: Open-Meteo</p>
-                    </div>
-                </div>
-            </div>
-            
-            <hr>
-
-            <a href="{% url 'resultados_detalle' %}" class="back-button">
-                ← Volver a Histórico Anual
-            </a>
-            
+      <!-- Barra de modo (Año/Mes llevan a resultados; Pronóstico activo) -->
+      <div class="controls-row" style="justify-content:space-between;">
+        <div class="mode-switch">
+          <a class="btn-clean" href="{% url 'resultados_detalle' %}">Año</a>
+          <a class="btn-clean" href="{% url 'resultados_detalle' %}">Mes</a>
+          <button class="active" disabled>Pronóstico</button>
         </div>
+
+        <a class="btn-clean btn-lg" href="{% url 'consulta_clima' %}">Nueva Consulta</a>
+      </div>
+
+      <!-- Controles de Pronóstico -->
+      <div class="controls-row">
+        <span class="pill" data-off="-14">-14</span>
+        <span class="pill" data-off="-7">-7</span>
+        <span class="pill active" data-off="0">Hoy</span>
+        <span class="pill" data-off="7">+7</span>
+        <span class="pill" data-off="14">+14</span>
+
+        <div style="margin-left:auto; display:flex; gap:8px; align-items:center;">
+          <button id="btnPrevDay" class="btn-clean">⟵ Anterior</button>
+          <div style="font-weight:700">Fecha: <span id="lblFecha">{{ today_date_string }}</span></div>
+          <button id="btnNextDay" class="btn-clean">Siguiente ⟶</button>
+        </div>
+      </div>
+
+      <!-- Cuerpo: mapa + métricas -->
+      <div class="content-grid">
+        <div class="left-column">
+          <h3>🌍 Ubicación Geográfica</h3>
+          <div id="map" class="map-section"></div>
+        </div>
+
+        <div class="metric-grid-clean">
+          <div class="data-panel-clean warm-bg"><span>T° MEDIODÍA (12PM)</span><span id="temp_12pm" class="metric-value-clean">--</span><span class="unit">°C</span></div>
+          <div class="data-panel-clean cold-bg"><span>T° TARDE (6PM)</span><span id="temp_6pm" class="metric-value-clean">--</span><span class="unit">°C</span></div>
+          <div class="data-panel-clean rain-bg"><span>PRECIPITACIÓN SUMA</span><span id="precip_sum" class="metric-value-clean">--</span><span class="unit">mm</span></div>
+          <div class="data-panel-clean moisture-bg"><span>HUMEDAD MÁXIMA</span><span id="humidity_max_abs" class="metric-value-clean">--</span><span class="unit">%</span></div>
+          <div class="data-panel-clean wind-bg"><span>VIENTO MÁXIMO</span><span id="wind_max" class="metric-value-clean">--</span><span class="unit">km/h</span></div>
+          <div class="data-panel-clean sun-bg"><span>RADIACIÓN SOLAR</span><span id="radiation_sum" class="metric-value-clean">--</span><span class="unit">J/m²</span></div>
+          <div class="data-panel-clean extreme-bg"><span>T° MÁX ABSOLUTA</span><span id="temp_max_abs" class="metric-value-clean">--</span><span class="unit">°C</span></div>
+          <div class="data-panel-clean cold-bg"><span>T° MÍN ABSOLUTA</span><span id="temp_min_abs" class="metric-value-clean">--</span><span class="unit">°C</span></div>
+          <div class="data-panel-clean info-bg"><span>DÍAS EN EL PERÍODO</span><span id="num_dias" class="metric-value-clean">1</span><span class="unit">días</span></div>
+        </div>
+      </div>
+
+      <div class="footer-spacer"></div>
+      <a href="{% url 'resultados_detalle' %}" class="back-button">← Volver a Histórico Anual</a>
+
     </div>
+  </div>
 
-    <script>
-        // Parámetros iniciales
-        const params = {
-            region_code: "{{ data.region_code|escapejs }}",
-            lat: {{ data.lat }},
-            lon: {{ data.lon }},
-            regionNombre: "{{ data.region_nombre|escapejs }}",
-        };
+  <!-- === Lógica === -->
+  <script>
+    // Datos de contexto
+    const REGION_CODE = "{{ data.region_code }}";
+    const REGION_NAME = "{{ data.region_nombre }}";
+    const LAT = {{ data.lat|floatformat:"6" }};
+    const LON = {{ data.lon|floatformat:"6" }};
+    let offset = 0;                  // -14..+14
+    const MIN_OFF = -14, MAX_OFF = 14;
 
-        const TODAY_DATE_STRING = "{{ today_date_string|escapejs }}";
-        
-        // ----------------------------------------------------
-        // Lógica del Mapa Leaflet
-        // ----------------------------------------------------
-        function initializeMap() {
-             try {
-                const map = L.map('mapid').setView([params.lat, params.lon], 6); 
+    /* ---------- MAPA ---------- */
+    (function initMap(){
+      const map = L.map('map', {zoomControl:true}).setView([LAT, LON], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18, attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+      const marker = L.marker([LAT, LON]).addTo(map);
+      marker.bindPopup(`${REGION_NAME}`).openPopup();
+      setTimeout(()=> map.invalidateSize(), 300);
+    })();
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                }).addTo(map);
+    /* ---------- MÉTRICAS ---------- */
+    function setMetric(id, v){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.textContent = (v === null || v === undefined) ? '--' : v;
+    }
+    function paintMetrics(m){
+      setMetric('temp_12pm', m.temp_12pm);
+      setMetric('temp_6pm', m.temp_6pm);
+      setMetric('precip_sum', m.precip_sum);
+      setMetric('wind_max', m.wind_max);
+      setMetric('radiation_sum', m.radiation_sum);
+      setMetric('temp_max_abs', m.temp_max_abs);
+      setMetric('temp_min_abs', m.temp_min_abs);
+      setMetric('humidity_max_abs', m.humidity_max_abs);
+      setMetric('num_dias', m.num_dias ?? 1);
+    }
 
-                L.marker([params.lat, params.lon]).addTo(map)
-                    .bindPopup(`<b>${params.regionNombre}</b>`).openPopup();
-            } catch (e) {
-                console.error("Error al inicializar el mapa Leaflet:", e);
-                document.getElementById('mapid').innerHTML = '<p style="text-align:center; color:red; padding:20px;">Error al cargar el mapa. Verifique la conexión o el CSS.</p>';
-            }
-        }
-        
-        // ----------------------------------------------------
-        // Lógica del Slider de Días AJAX
-        // ----------------------------------------------------
-        const daySlider = document.getElementById('day-slider');
-        // ✅ Referencia a la nueva etiqueta dinámica (h3)
-        const dynamicPeriodHeader = document.getElementById('dynamic-period-header'); 
-        const statsHeader = document.getElementById('stats-header');
-        const loadingMessage = document.getElementById('loading-message');
-        const errorMessage = document.getElementById('error-message');
+    async function callForecast(days_offset){
+      const res = await fetch("{% url 'fetch_pronostico_ajax' %}", {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ region_code: REGION_CODE, days_offset })
+      });
+      if(!res.ok) throw new Error('Error pronóstico');
+      return res.json();
+    }
 
-        /**
-         * Función auxiliar para calcular la fecha a partir del offset.
-         */
-        function calculateDate(offset) {
-            const today = new Date(TODAY_DATE_STRING);
-            today.setDate(today.getDate() + offset);
-            // Formato YYYY-MM-DD
-            return today.toISOString().split('T')[0]; 
-        }
+    function updateNav(){
+      document.getElementById('btnPrevDay').disabled = (offset <= MIN_OFF);
+      document.getElementById('btnNextDay').disabled = (offset >= MAX_OFF);
+      document.querySelectorAll('.pill').forEach(p=>{
+        p.classList.toggle('active', parseInt(p.dataset.off,10) === offset);
+      });
+    }
 
-        /**
-         * Función auxiliar para generar el texto de encabezado según el offset.
-         * @param {number} daysOffset - Número de días de diferencia con respecto a hoy (0).
-         * @param {string} targetDate - Fecha en formato YYYY-MM-DD.
-         * @returns {string} El texto formateado.
-         */
-        function formatHeaderText(daysOffset, targetDate) {
-            if (daysOffset === 0) {
-                return `Hoy (${targetDate})`;
-            } else if (daysOffset < 0) {
-                return `Histórico ${Math.abs(daysOffset)} días atrás (${targetDate})`;
-            } else {
-                return `Pronóstico en ${daysOffset} días (${targetDate})`;
-            }
-        }
+    async function loadOffset(newOffset){
+      offset = Math.max(MIN_OFF, Math.min(MAX_OFF, newOffset));
+      updateNav();
+      const r = await callForecast(offset);
+      if(r?.success){
+        paintMetrics(r.metrics);
+        document.getElementById('lblFecha').textContent = r.periodo_label;
+      }
+    }
 
-        function updateMetricsDisplay(metrics) {
-            const emptyValue = '--';
-            if (!metrics || metrics.num_dias === undefined) { 
-                document.getElementById('temp_12pm').textContent = emptyValue; 
-                document.getElementById('temp_6pm').textContent = emptyValue; 
-                document.getElementById('precip_sum').textContent = emptyValue;
-                document.getElementById('wind_max').textContent = emptyValue;
-                document.getElementById('radiation_sum').textContent = emptyValue;
-                document.getElementById('temp_max_abs').textContent = emptyValue; 
-                document.getElementById('temp_min_abs').textContent = emptyValue;
-                document.getElementById('num_dias').textContent = emptyValue;
-                document.getElementById('humidity_max_abs').textContent = emptyValue;
-                return;
-            }
+    // Eventos chips
+    document.querySelectorAll('.pill').forEach(p=>{
+      p.onclick = ()=> loadOffset(parseInt(p.dataset.off,10));
+    });
 
-            // Usamos toFixed(1) para todas las temperaturas y toFixed(1) para precipitación y viento, asumiendo una decimal
-            document.getElementById('temp_12pm').textContent = metrics.temp_12pm.toFixed(1); 
-            document.getElementById('temp_6pm').textContent = metrics.temp_6pm.toFixed(1); 
-            document.getElementById('precip_sum').textContent = metrics.precip_sum.toFixed(1);
-            document.getElementById('wind_max').textContent = metrics.wind_max.toFixed(1);
-            document.getElementById('radiation_sum').textContent = metrics.radiation_sum.toFixed(1);
-            document.getElementById('temp_max_abs').textContent = metrics.temp_max_abs.toFixed(1); 
-            document.getElementById('temp_min_abs').textContent = metrics.temp_min_abs.toFixed(1); 
-            document.getElementById('num_dias').textContent = metrics.num_dias;
-            document.getElementById('humidity_max_abs').textContent = metrics.humidity_max_abs.toFixed(0);
-        }
+    // Botones día a día
+    document.getElementById('btnPrevDay').onclick = ()=> loadOffset(offset - 1);
+    document.getElementById('btnNextDay').onclick = ()=> loadOffset(offset + 1);
 
-        async function fetchDailyData(daysOffset) {
-            
-            loadingMessage.style.display = 'block';
-            errorMessage.style.display = 'none';
-
-            const url = "{% url 'fetch_pronostico_ajax' %}";
-            const targetDate = calculateDate(daysOffset);
-            
-            const payload = {
-                region_code: params.region_code,
-                days_offset: daysOffset, 
-            };
-            
-            // Usar el nuevo formato para el mensaje de carga
-            const loadingText = formatHeaderText(daysOffset, targetDate);
-            dynamicPeriodHeader.textContent = `Cargando: ${loadingText}`;
-            statsHeader.textContent = `Cargando Resumen Diario (${targetDate})`;
-
-
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        // CSRF token es necesario si no se usa csrf_exempt o si se usa en producción
-                        // 'X-CSRFToken': getCookie('csrftoken') // Si se incluye, necesitas la función getCookie
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    // Actualiza la etiqueta con el texto final formateado
-                    dynamicPeriodHeader.textContent = formatHeaderText(daysOffset, targetDate); 
-                    statsHeader.textContent = `📊 Resumen ${formatHeaderText(daysOffset, targetDate)}`;
-                    updateMetricsDisplay(data.metrics);
-                } else {
-                    errorMessage.textContent = data.message || "Error al obtener datos de la API. Intenta otro día.";
-                    errorMessage.style.display = 'block';
-                    updateMetricsDisplay(null); 
-                }
-
-            } catch (error) {
-                console.error("Fetch error:", error);
-                errorMessage.textContent = "Error de conexión o servidor.";
-                errorMessage.style.display = 'block';
-                updateMetricsDisplay(null);
-            } finally {
-                loadingMessage.style.display = 'none';
-            }
-        }
-
-        /**
-         * Listener 'input' (mientras se arrastra) - ACTUALIZA SOLO EL TEXTO
-         */
-        daySlider.addEventListener('input', (event) => {
-            const daysOffset = parseInt(event.target.value);
-            const targetDate = calculateDate(daysOffset);
-            
-            // ✅ Usa el nuevo formato dinámico
-            const labelText = formatHeaderText(daysOffset, targetDate);
-            
-            dynamicPeriodHeader.textContent = labelText;
-            statsHeader.textContent = `📊 Resumen ${labelText}`;
-        });
-
-        /**
-         * Listener 'change' (cuando se suelta) - LLAMA A LA API
-         */
-        daySlider.addEventListener('change', (event) => {
-            const daysOffset = parseInt(event.target.value);
-            fetchDailyData(daysOffset);
-        });
-
-        // Cargar datos iniciales al entrar a la página (Hoy, offset 0) y el mapa
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeMap();         // Inicializa el mapa
-            fetchDailyData(0);       // Cargar datos de Hoy
-        });
-
-    </script>
+    // Inicio
+    loadOffset(0);
+  </script>
 </body>
 </html>

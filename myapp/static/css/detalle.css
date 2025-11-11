@@ -244,3 +244,49 @@ body {
 .back-button:hover {
     background-image: linear-gradient(to top, #494f54, #5a6268);
 }
+/* --- Controles de navegación por modo --- */
+.mode-switch { display: inline-flex; border:1px solid rgba(255,255,255,.5); border-radius:10px; overflow:hidden; }
+.mode-switch button{
+  padding:10px 16px; background:rgba(255,255,255,.9); border:none; cursor:pointer;
+  font-weight:600; color:#333;
+}
+.mode-switch button.active{ background:#007bff; color:#fff; }
+.mode-switch button:not(.active):hover{ background:#eef3ff; }
+
+.controls-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 4px; }
+.controls-row .pill{
+  padding:8px 12px; border:1px solid #e1e5ee; border-radius:999px; background:#fff; cursor:pointer; font-weight:600;
+}
+.controls-row .pill.active{ background:#007bff; color:#fff; border-color:#007bff; }
+.separator-sm{ height:8px; }
+
+.select-clean{ padding:10px 12px; border:1px solid #e1e5ee; border-radius:8px; background:#fff; }
+.btn-clean{ padding:10px 14px; border-radius:8px; border:0; background:#101318; color:#fff; font-weight:600; cursor:pointer; }
+.btn-clean:disabled{ opacity:.5; cursor:not-allowed; }
+
+
+/* --- Controles de navegación por modo --- */
+.mode-switch { display: inline-flex; border:1px solid rgba(255,255,255,.5); border-radius:10px; overflow:hidden; }
+.mode-switch button{
+  padding:10px 16px; background:rgba(255,255,255,.9); border:none; cursor:pointer;
+  font-weight:600; color:#333;
+}
+.mode-switch button.active{ background:#007bff; color:#fff; }
+.mode-switch button:not(.active):hover{ background:#eef3ff; }
+
+.controls-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 14px; }
+
+/* Chips (offsets) */
+.controls-row .pill{
+  padding:8px 12px; border:1px solid #e1e5ee; border-radius:999px; background:#fff; cursor:pointer; font-weight:600;
+}
+.controls-row .pill.active{ background:#007bff; color:#fff; border-color:#007bff; }
+
+.select-clean{ padding:10px 12px; border:1px solid #e1e5ee; border-radius:8px; background:#fff; }
+
+/* Botón estilo app (sirve para <a> y <button>) */
+.btn-clean{
+  display:inline-block; text-decoration:none; padding:10px 14px; border-radius:8px; border:0;
+  background:#101318; color:#fff; font-weight:600; cursor:pointer;
+}
+.btn-clean:disabled{ opacity:.5; cursor:not-allowed; }

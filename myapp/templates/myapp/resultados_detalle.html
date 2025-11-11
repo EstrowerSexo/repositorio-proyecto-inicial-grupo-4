@@ -1,272 +1,256 @@
 {% load static %}
-    </body>
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CLIMA CHILE - Resultados Detalle</title>
-    
-    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+  <meta charset="UTF-8">
+  <title>CLIMA CHILE - Resultados Detalle</title>
 
-    <link rel="stylesheet" href="{% static 'css/detalle.css' %}"> 
-    
+  <!-- Estilos globales del proyecto -->
+  <link rel="stylesheet" href="{% static 'css/detalle.css' %}">
+
+  <!-- Ajustes visuales específicos pedidos -->
+  <style>
+    /* Botón genérico (gris del sitio) */
+    .btn-clean{
+      display:inline-block;
+      padding:12px 18px;
+      background:#101318;           /* gris del pie */
+      color:#fff;
+      border:0;
+      border-radius:8px;
+      font-weight:700;
+      cursor:pointer;
+      text-decoration:none;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);
+      transition:background .2s ease, transform .05s ease;
+    }
+    .btn-clean:hover{ background:#2a3b4f; }
+    .btn-clean:active{ transform:translateY(1px); }
+    .btn-clean:disabled{ opacity:.5; cursor:not-allowed; }
+
+    /* Variante grande para “Ir a Pronóstico” */
+    .btn-lg{ padding:14px 22px; font-size:1rem; }
+
+    /* Selector Año/Mes en gris */
+    .mode-switch{ display:inline-flex; border-radius:10px; overflow:hidden; }
+    .mode-switch button{
+      padding:12px 18px;
+      background:#101318;
+      color:#fff;
+      border:none;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .mode-switch button.active{ background:#2a3b4f; }
+    .mode-switch button:not(.active):hover{ background:#2a3b4f; }
+
+    .controls-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 14px; }
+
+    /* Pequeño espacio inferior para “flotar” sobre la barra gris */
+    .footer-spacer{ height:30px; }
+  </style>
+
+  <!-- Leaflet (mapa) -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+    crossorigin=""
+  />
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+    crossorigin=""
+  ></script>
 </head>
 
-<body style="background-image: url('{% static "img/"|add:data.imagen_fondo %}'); background-size: cover; background-position: center; background-attachment: fixed;">
-    
-    <div class="card-container">
-        <div class="card-detalle"> 
-            
-            <div class="header-detalle">
-                <h1>CLIMA CHILE - Resultados Detalle</h1>
-                <p class="subtitle">Análisis Histórico - Región de {{ data.region_nombre }} ({{ data.año }})</p>
-            </div>
-            
-            <div class="content-grid">
-                
-                <div class="left-column">
-                    <h2>🗺️ Ubicación Geográfica</h2>
-                    
-                    <div id="mapid" class="map-section"></div>
-                    
-                    <div class="slider-container">
-                        <h3 style="margin-bottom: 10px;">Selección de Periodo Histórico</h3>
-                        
-                        <div id="month-label-wrapper"> 
-                            <label for="month-slider" id="month-label">Periodo: **Anual**</label>
-                        </div>
+<body style="background-image: url('{% static 'img/' %}{{ data.imagen_fondo }}'); background-size: cover; background-position: center;">
+  <div class="card-container">
+    <div class="card-detalle">
 
-                        <input type="range" id="month-slider" min="0" max="13" value="0" step="1">
-                        
-                        <div class="month-labels-simple"> 
-                            <span>Anual</span>
-                            <span>Mensual</span>
-                            <span style="float: right;">Actualidad</span>
-                        </div>
-                    </div>
+      <!-- Encabezado -->
+      <div class="header-detalle">
+        <h1>CLIMA CHILE - Resultados Detalle</h1>
+        <div class="subtitle">Análisis Histórico - Región de {{ data.region_nombre }} ({{ current_year }})</div>
+      </div>
 
-                    <div id="forecast-block" class="forecast-container" style="display: none;"></div>
-
-                </div>
-                
-                <div class="stats-section">
-                    <div class="stats-scroll-container">
-                        <h2 id="stats-header">📊 Resumen Anual</h2> 
-                        
-                        <div class="metric-grid-clean">
-                             <div class="data-panel-clean warm-bg">🌡️ <span>T° MÁX DIARIA</span> <span class="metric-value-clean" id="temp_max_avg">--</span> <span>°C</span></div>
-                             <div class="data-panel-clean cold-bg">❄️ <span>T° MÍN DIARIA</span> <span class="metric-value-clean" id="temp_min_avg">--</span> <span>°C</span></div>
-                             <div class="data-panel-clean rain-bg">💧 <span>PRECIPITACIÓN SUMA</span> <span class="metric-value-clean" id="precip_sum">--</span> <span>mm</span></div>
-                             <div class="data-panel-clean moisture-bg">💦 <span>HUMEDAD MÁXIMA</span> <span class="metric-value-clean" id="humidity_max_abs">--</span> <span>%</span></div>                          
-                             <div class="data-panel-clean wind-bg">💨 <span>VIENTO MÁXIMO</span> <span class="metric-value-clean" id="wind_max">--</span> <span>km/h</span></div>
-                             <div class="data-panel-clean sun-bg">☀️ <span>RADIACIÓN SOLAR</span> <span class="metric-value-clean" id="radiation_sum">--</span> <span>J/m²</span></div>
-                             <div class="data-panel-clean extreme-bg">🔥 <span>T° MÁX ABSOLUTA</span> <span class="metric-value-clean" id="temp_max_abs">--</span> <span>°C</span></div>
-                             <div class="data-panel-clean extreme-bg">🥶 <span>T° MÍN ABSOLUTA</span> <span class="metric-value-clean" id="temp_min_abs">--</span> <span>°C</span></div>
-                             <div class="data-panel-clean info-bg">🗓️ <span>DÍAS EN EL PERIODO</span> <span class="metric-value-clean" id="num_dias">--</span> <span>días</span></div> 
-                        </div>
-                        
-                        <p id="loading-message" style="text-align: center; color: #007bff; margin-top: 20px; font-weight: 600; display: none;">Cargando datos...</p>
-                        <p id="error-message" style="text-align: center; color: #dc3545; margin-top: 20px; font-weight: 600; display: none;">Error al cargar los datos.</p>
-                        
-                        <p style="font-size: 0.8rem; color: #000000ff; text-align: right; margin-top: 30px;">Fuente: Open-Meteo</p>
-                    </div>
-                </div>
-            </div>
-            
-            <hr>
-
-            <a href="{% url 'consulta_clima' %}" class="back-button">
-                ← Volver a Nueva Consulta
-            </a>
-            
+      <!-- Barra de modo + Ir a Pronóstico -->
+      <div class="controls-row" style="justify-content:space-between; align-items:center;">
+        <div class="mode-switch" id="modeSwitchHist">
+          <button type="button" id="btnModeYear" class="active">Año</button>
+          <button type="button" id="btnModeMonth">Mes</button>
         </div>
+        <a class="btn-clean btn-lg" href="{% url 'pronostico_detalle' %}">Ir a Pronóstico</a>
+      </div>
+
+      <!-- Controles de AÑO -->
+      <div id="controlsYear">
+        <div class="controls-row">
+          <button class="btn-clean" id="btnYearPrev">⟵ Año anterior</button>
+          <div style="font-weight:700">Año: <span id="lblYear">{{ current_year }}</span></div>
+          <button class="btn-clean" id="btnYearNext">Año siguiente ⟶</button>
+        </div>
+      </div>
+
+      <!-- Controles de MES -->
+      <div id="controlsMonth" style="display:none">
+        <div class="controls-row">
+          <button class="btn-clean" id="btnMonthPrev">⟵ Mes anterior</button>
+          <select id="selMonth" class="btn-clean" style="background:#101318; border-radius:8px;">
+            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
+            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
+            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
+            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+          </select>
+          <button class="btn-clean" id="btnMonthNext">Mes siguiente ⟶</button>
+        </div>
+        <div style="opacity:.75; font-weight:600;">Periodo: <span id="lblPeriodo">—</span></div>
+      </div>
+
+      <!-- Cuerpo: Mapa + Métricas -->
+      <div class="content-grid">
+        <!-- Mapa -->
+        <div class="left-column">
+          <h3>🌍 Ubicación Geográfica</h3>
+          <div id="map" class="map-section"></div>
+        </div>
+
+        <!-- Métricas -->
+        <div class="metric-grid-clean">
+          <div class="data-panel-clean warm-bg"><span>T° MÁX DIARIA</span><span id="temp_max_avg" class="metric-value-clean">--</span><span class="unit">°C</span></div>
+          <div class="data-panel-clean cold-bg"><span>T° MÍN DIARIA</span><span id="temp_min_avg" class="metric-value-clean">--</span><span class="unit">°C</span></div>
+          <div class="data-panel-clean rain-bg"><span>PRECIPITACIÓN SUMA</span><span id="precip_sum" class="metric-value-clean">--</span><span class="unit">mm</span></div>
+          <div class="data-panel-clean moisture-bg"><span>HUMEDAD MÁXIMA</span><span id="humidity_max_abs" class="metric-value-clean">--</span><span class="unit">%</span></div>
+          <div class="data-panel-clean wind-bg"><span>VIENTO MÁXIMO</span><span id="wind_max" class="metric-value-clean">--</span><span class="unit">km/h</span></div>
+          <div class="data-panel-clean sun-bg"><span>RADIACIÓN SOLAR</span><span id="radiation_sum" class="metric-value-clean">--</span><span class="unit">J/m²</span></div>
+          <div class="data-panel-clean extreme-bg"><span>T° MÁX ABSOLUTA</span><span id="temp_max_abs" class="metric-value-clean">--</span><span class="unit">°C</span></div>
+          <div class="data-panel-clean cold-bg"><span>T° MÍN ABSOLUTA</span><span id="temp_min_abs" class="metric-value-clean">--</span><span class="unit">°C</span></div>
+          <div class="data-panel-clean info-bg"><span>DÍAS EN EL PERÍODO</span><span id="num_dias" class="metric-value-clean">--</span><span class="unit">días</span></div>
+        </div>
+      </div>
+
+      <div class="footer-spacer"></div>
+      <a href="{% url 'consulta_clima' %}" class="back-button">← Volver a Nueva Consulta</a>
+
     </div>
+  </div>
 
-    <script>
-        // Parámetros iniciales
-        const params = {
-            region_code: "{{ data.region_code|escapejs }}",
-            year: {{ data.año }},
-            lat: {{ data.lat }},
-            lon: {{ data.lon }},
-            regionNombre: "{{ data.region_nombre|escapejs }}",
-            isHistorical: {% if data.is_historical %}true{% else %}false{% endif %},
-            forecastUrl: "{% url 'pronostico_detalle' %}", // ✅ Nueva URL de redirección
-        };
+  <!-- === Lógica === -->
+  <script>
+    // Datos de contexto
+    const REGION_CODE = "{{ data.region_code }}";
+    const REGION_NAME = "{{ data.region_nombre }}";
+    const LAT = {{ data.lat|floatformat:"6" }};
+    const LON = {{ data.lon|floatformat:"6" }};
+    let curYear = {{ current_year }};
+    const LIMIT_END = "{{ limit_date }}"; // YYYY-MM-DD
+    const MAX_YEAR = 2025;
 
-        // Variables de fecha del servidor
-        const CURRENT_YEAR = {{ current_year }};
-        const CURRENT_MONTH = {{ current_month }};
-        const LIMIT_DATE_STRING = "{{ limit_date|escapejs }}"; 
+    /* ---------- MAPA ---------- */
+    (function initMap(){
+      const map = L.map('map', {zoomControl:true}).setView([LAT, LON], 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18, attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+      const marker = L.marker([LAT, LON]).addTo(map);
+      marker.bindPopup(`${REGION_NAME}`).openPopup();
+      setTimeout(()=> map.invalidateSize(), 300);
+    })();
 
-        // Mapeo de meses para el slider (13 es "Actualidad")
-        const months = [
-            'Anual', 'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre', 'Actualidad'
-        ];
-        
-        // ----------------------------------------------------
-        // 1. Lógica del Mapa Leaflet
-        // ----------------------------------------------------
-        function initializeMap() {
-             try {
-                const map = L.map('mapid').setView([params.lat, params.lon], 6); 
+    /* ---------- MÉTRICAS ---------- */
+    function setMetric(id, v){
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.textContent = (v === null || v === undefined) ? '--' : v;
+    }
+    function paintMetrics(m){
+      setMetric('temp_max_avg', m.temp_max_avg);
+      setMetric('temp_min_avg', m.temp_min_avg);
+      setMetric('precip_sum', m.precip_sum);
+      setMetric('wind_max', m.wind_max);
+      setMetric('radiation_sum', m.radiation_sum);
+      setMetric('temp_max_abs', m.temp_max_abs);
+      setMetric('temp_min_abs', m.temp_min_abs);
+      setMetric('humidity_max_abs', m.humidity_max_abs);
+      setMetric('num_dias', m.num_dias);
+    }
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                }).addTo(map);
+    async function callArchive(year, month){ // month: 0=anual; 1..12=mensual
+      const res = await fetch("{% url 'fetch_clima_data_ajax' %}", {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          region_code: REGION_CODE,
+          year, month,
+          is_forecast:false,
+          period_end: LIMIT_END
+        })
+      });
+      if(!res.ok) throw new Error('Error histórico');
+      return res.json();
+    }
 
-                L.marker([params.lat, params.lon]).addTo(map)
-                    .bindPopup(`<b>${params.regionNombre}</b>`).openPopup();
-            } catch (e) {
-                console.error("Error al inicializar el mapa Leaflet:", e);
-                document.getElementById('mapid').innerHTML = '<p style="text-align:center; color:red; padding:20px;">Error al cargar el mapa. Verifique la conexión o el CSS.</p>';
-            }
-        }
-        
-        // ----------------------------------------------------
-        // 2. Lógica del Slider AJAX (Optimizado y Corregido)
-        // ----------------------------------------------------
-        const monthSlider = document.getElementById('month-slider');
-        const monthLabel = document.getElementById('month-label');
-        const statsHeader = document.getElementById('stats-header');
-        const loadingMessage = document.getElementById('loading-message');
-        const errorMessage = document.getElementById('error-message');
+    async function loadYear(y){
+      document.getElementById('lblYear').textContent = y;
+      const r = await callArchive(y, 0);
+      if(r?.success){ paintMetrics(r.metrics); const lbl=document.getElementById('lblPeriodo'); if(lbl) lbl.textContent=r.periodo_label||`Anual (${y})`; }
+      updateYearButtons();
+    }
+    async function loadMonth(m){
+      const r = await callArchive(curYear, m);
+      if(r?.success){ paintMetrics(r.metrics); const lbl=document.getElementById('lblPeriodo'); if(lbl) lbl.textContent=r.periodo_label||'--'; }
+      updateYearButtons();
+    }
 
-        function updateMetricsDisplay(metrics) {
-            // ... (Función de display se mantiene igual) ...
-            const emptyValue = '--';
-            if (!metrics || metrics.temp_max_avg === '--') { 
-                document.getElementById('temp_max_avg').textContent = emptyValue;
-                document.getElementById('temp_min_avg').textContent = emptyValue;
-                document.getElementById('precip_sum').textContent = emptyValue;
-                document.getElementById('wind_max').textContent = emptyValue;
-                document.getElementById('radiation_sum').textContent = emptyValue;
-                document.getElementById('temp_max_abs').textContent = emptyValue;
-                document.getElementById('temp_min_abs').textContent = emptyValue;
-                document.getElementById('num_dias').textContent = emptyValue;
-                document.getElementById('humidity_max_abs').textContent = emptyValue;
-                return;
-            }
+    /* ---------- MODO ---------- */
+    const btnModeYear = document.getElementById('btnModeYear');
+    const btnModeMonth = document.getElementById('btnModeMonth');
+    const controlsYear = document.getElementById('controlsYear');
+    const controlsMonth = document.getElementById('controlsMonth');
 
-            document.getElementById('temp_max_avg').textContent = metrics.temp_max_avg.toFixed(1);
-            document.getElementById('temp_min_avg').textContent = metrics.temp_min_avg.toFixed(1);
-            document.getElementById('precip_sum').textContent = metrics.precip_sum.toFixed(1);
-            document.getElementById('wind_max').textContent = metrics.wind_max.toFixed(1);
-            document.getElementById('radiation_sum').textContent = metrics.radiation_sum.toFixed(1);
-            document.getElementById('temp_max_abs').textContent = metrics.temp_max_abs.toFixed(1);
-            document.getElementById('temp_min_abs').textContent = metrics.temp_min_abs.toFixed(1);
-            document.getElementById('num_dias').textContent = metrics.num_dias;
-            document.getElementById('humidity_max_abs').textContent = metrics.humidity_max_abs.toFixed(0);
-        }
+    function setMode(mode){
+      if(mode==='year'){
+        btnModeYear.classList.add('active'); btnModeMonth.classList.remove('active');
+        controlsYear.style.display='block'; controlsMonth.style.display='none';
+        loadYear(curYear);
+      } else {
+        btnModeMonth.classList.add('active'); btnModeYear.classList.remove('active');
+        controlsMonth.style.display='block'; controlsYear.style.display='none';
+        const sel = document.getElementById('selMonth');
+        loadMonth(parseInt(sel.value||'1',10));
+      }
+    }
 
-        async function fetchData(monthValue) {
-            
-            // ✅ Redirección a la nueva URL si es "Actualidad" (valor 13)
-            if (monthValue === 13) {
-                window.location.href = params.forecastUrl;
-                return; 
-            }
-            // ----------------------------------------------------------------------
-            // Lógica de carga para Histórico (0 a 12)
-            // ----------------------------------------------------------------------
-            
-            loadingMessage.style.display = 'block';
-            errorMessage.style.display = 'none';
+    btnModeYear.onclick = ()=> setMode('year');
+    btnModeMonth.onclick = ()=> setMode('month');
 
-            let periodEnd = null; // Parámetro para limitar el final del historial
-            
-            if (params.year === CURRENT_YEAR) {
-                if (monthValue === 0 || (monthValue >= 1 && monthValue <= CURRENT_MONTH)) {
-                    // Limitamos el final al límite (hace 1 día, según configuración de views.py)
-                    periodEnd = LIMIT_DATE_STRING; 
-                } else if (monthValue > CURRENT_MONTH) {
-                    // Meses futuros del año actual
-                    errorMessage.textContent = `Error: Los datos históricos de ${months[monthValue]} de ${CURRENT_YEAR} aún no están disponibles (límite: ${LIMIT_DATE_STRING}).`;
-                    errorMessage.style.display = 'block';
-                    loadingMessage.style.display = 'none';
-                    updateMetricsDisplay(null);
-                    return; 
-                }
-            }
+    /* ---------- EVENTOS ---------- */
+    const btnYearPrev = document.getElementById('btnYearPrev');
+    const btnYearNext = document.getElementById('btnYearNext');
 
+    function updateYearButtons(){
+      btnYearNext.disabled = (curYear >= MAX_YEAR);
+    }
 
-            // 2. Construir la Petición AJAX
-            const url = "{% url 'fetch_clima_data_ajax' %}";
-            const payload = {
-                region_code: params.region_code,
-                year: params.year,
-                month: monthValue, 
-                is_forecast: false, // Ahora siempre es falso, ya que el caso 13 redirige
-                period_end: periodEnd, 
-            };
-            
-            monthLabel.textContent = `Cargando: ${months[monthValue]} (${params.year})`;
-            statsHeader.textContent = `Cargando Resumen ${months[monthValue]}`;
+    btnYearPrev.onclick = ()=>{ curYear--; setMode('year'); };
+    btnYearNext.onclick = ()=>{
+      if(curYear < MAX_YEAR){ curYear++; setMode('year'); }
+      updateYearButtons();
+    };
 
+    const selMonth = document.getElementById('selMonth');
+    document.getElementById('btnMonthPrev').onclick = ()=>{
+      selMonth.value = Math.max(1, (parseInt(selMonth.value,10)||1) - 1);
+      loadMonth(parseInt(selMonth.value,10));
+    };
+    document.getElementById('btnMonthNext').onclick = ()=>{
+      selMonth.value = Math.min(12, (parseInt(selMonth.value,10)||1) + 1);
+      loadMonth(parseInt(selMonth.value,10));
+    };
+    selMonth.onchange = ()=> loadMonth(parseInt(selMonth.value,10));
 
-            try {
-                const response = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                const data = await response.json();
-
-                if (response.ok && data.success) {
-                    monthLabel.textContent = `Periodo: ${data.periodo_label}`;
-                    statsHeader.textContent = `📊 Resumen ${data.periodo_label}`;
-                    updateMetricsDisplay(data.metrics);
-                } else {
-                    errorMessage.textContent = data.message || "Error al obtener datos de la API. Intenta otro periodo.";
-                    errorMessage.style.display = 'block';
-                    updateMetricsDisplay(null); 
-                }
-
-            } catch (error) {
-                console.error("Fetch error:", error);
-                errorMessage.textContent = "Error de conexión o servidor.";
-                errorMessage.style.display = 'block';
-                updateMetricsDisplay(null);
-            } finally {
-                loadingMessage.style.display = 'none';
-            }
-        }
-
-        /**
-         * Listener 'input' (mientras se arrastra)
-         */
-        monthSlider.addEventListener('input', (event) => {
-            const value = parseInt(event.target.value);
-            if (value === 13) {
-                monthLabel.textContent = `Periodo: Actualidad`;
-                statsHeader.textContent = `📊 Resumen Pronóstico`;
-            } else {
-                monthLabel.textContent = `Periodo: ${months[value]} (${params.year})`;
-                statsHeader.textContent = `📊 Resumen ${months[value]}`;
-            }
-        });
-
-        /**
-         * Listener 'change' (cuando se suelta)
-         * Llama a la función de obtención de datos o redirige.
-         */
-        monthSlider.addEventListener('change', (event) => {
-            const value = parseInt(event.target.value);
-            fetchData(value);
-        });
-
-        // Cargar datos iniciales al entrar a la página (Anual) y el mapa
-        document.addEventListener('DOMContentLoaded', () => {
-            initializeMap();         // Inicializa el mapa
-            fetchData(0);            // Cargar datos anuales (mes 0)
-        });
-
-    </script>
+    /* ---------- INICIO ---------- */
+    setMode('year');
+  </script>
 </body>
 </html>
