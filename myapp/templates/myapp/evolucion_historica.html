@@ -2,7 +2,7 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-m">
+    <meta charset="UTF-8">
     <title>CLIMA CHILE - Evolución Histórica</title>
     
     <link rel="stylesheet" href="{% static 'css/detalle.css' %}">
@@ -135,8 +135,10 @@
         const REGION_NAME = "{{ data.region_nombre }}";
         const LAT = {{ data.lat|floatformat:"6" }};
         const LON = {{ data.lon|floatformat:"6" }};
+        
+        // Esta es la URL REAL
         const AJAX_URL = "{% url 'fetch_evolucion_ajax' %}";
-
+        
         /* ---------- 1. INICIALIZAR MAPA ---------- */
         (function initMap(){
             const map = L.map('map', {zoomControl:true}).setView([LAT, LON], 6);
@@ -152,7 +154,12 @@
         
         // Función auxiliar para crear un gráfico
         function createChart(canvasId, label, labels_x, data_y, color) {
-            const ctx = document.getElementById(canvasId).getContext('2d');
+            const el = document.getElementById(canvasId);
+            if (!el) {
+                console.error(`Error: No se encontró el canvas con id: ${canvasId}`);
+                return;
+            }
+            const ctx = el.getContext('2d');
             new Chart(ctx, {
                 type: 'scatter', // Gráfico de dispersión
                 data: {
@@ -189,11 +196,14 @@
                 const response = await fetch(AJAX_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    // NOTA: No necesitamos enviar el token CSRF porque 
+                    // la vista en views.py tiene @csrf_exempt
                     body: JSON.stringify({ region_code: REGION_CODE })
                 });
 
                 if (!response.ok) {
-                    throw new Error('Error en la respuesta del servidor');
+                    // Si el servidor da 404 o 500, entrará aquí
+                    throw new Error(`Error en la respuesta del servidor: ${response.status}`);
                 }
 
                 const result = await response.json();
@@ -234,3 +244,4 @@
     </script>
 </body>
 </html>
+```eof
