@@ -73,13 +73,15 @@
 
       <!-- Barra de modo (Año/Mes llevan a resultados; Pronóstico activo) -->
       <div class="controls-row" style="justify-content:space-between;">
-        <div class="mode-switch">
-          <a class="btn-clean" href="{% url 'resultados_detalle' %}">Año</a>
-          <a class="btn-clean" href="{% url 'resultados_detalle' %}">Mes</a>
-          <button class="active" disabled>Pronóstico</button>
-        </div>
+          <div class="mode-switch">
+              <a class="btn-clean" href="{% url 'resultados_detalle' %}">Histórico (Año/Mes)</a>
+              <button class="active" disabled>Pronóstico</button>
+          </div>
 
-        <a class="btn-clean btn-lg" href="{% url 'consulta_clima' %}">Nueva Consulta</a>
+          <div style="display:flex; gap:10px; align-items:center;">
+              <a class="btn-clean" href="{% url 'consulta_clima' %}">Nueva Consulta</a>
+              <a class="btn-clean btn-lg" href="{% url 'evolucion_historica' %}">Ver Evolución Histórica</a>
+          </div>
       </div>
 
       <!-- Controles de Pronóstico -->

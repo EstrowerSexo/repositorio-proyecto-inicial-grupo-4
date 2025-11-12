@@ -1,7 +1,7 @@
 # ==============================================================================
 # IMPORTACIONES CLAVE
 # ==============================================================================
-import requests                          
+import requests                         
 from django.shortcuts import render, redirect 
 from datetime import date, timedelta 
 import json
@@ -12,7 +12,7 @@ from django.http import JsonResponse, Http404
 from django.views.decorators.csrf import csrf_exempt 
 
 # Importamos las definiciones de nuestra aplicación (myapp)
-from .forms import ClimaSearchForm       
+from .forms import ClimaSearchForm      
 from .models import REGIONES_CHOICES, RegistroClima 
 from django.db.models import ObjectDoesNotExist 
 today = date.today()
@@ -21,21 +21,21 @@ today = date.today()
 # ==============================================================================
 
 REGION_COORDS = {
-    'ARICA': (-18.47, -70.29),          
-    'TARAPACA': (-20.22, -70.14),       
+    'ARICA': (-18.47, -70.29),      
+    'TARAPACA': (-20.22, -70.14),     
     'ANTOFAGASTA': (-23.65, -70.40),    
-    'ATACAMA': (-27.36, -70.33),        
-    'COQUIMBO': (-29.91, -71.25),       
+    'ATACAMA': (-27.36, -70.33),      
+    'COQUIMBO': (-29.91, -71.25),     
     'VALPARAISO': (-33.04, -71.60),     
     'METROPOLITANA': (-33.44, -70.67),  
-    'OHIGGINS': (-34.10, -70.74),       
-    'MAULE': (-35.42, -71.67),          
-    'NUBLE': (-36.60, -72.10),          
-    'BIOBIO': (-36.82, -73.05),         
-    'ARAUCANIA': (-38.73, -72.60),      
-    'RIOS': (-39.81, -73.24),           
-    'LAGOS': (-41.47, -72.94),          
-    'AYSEN': (-45.57, -72.08),          
+    'OHIGGINS': (-34.10, -70.74),     
+    'MAULE': (-35.42, -71.67),      
+    'NUBLE': (-36.60, -72.10),      
+    'BIOBIO': (-36.82, -73.05),     
+    'ARAUCANIA': (-38.73, -72.60),     
+    'RIOS': (-39.81, -73.24),       
+    'LAGOS': (-41.47, -72.94),      
+    'AYSEN': (-45.57, -72.08),      
     'MAGALLANES': (-53.16, -70.91),     
 }
 
@@ -140,7 +140,7 @@ def clima_view(request):
             try:
                 año_buscado = int(año_buscado)
                 if año_buscado < 1950 or año_buscado > date.today().year:
-                    mensaje_error = "Ingrese un año válido (entre 1950 y el actual)."
+                        mensaje_error = "Ingrese un año válido (entre 1950 y el actual)."
             except (ValueError, TypeError):
                 mensaje_error = "Ingrese un año numérico válido."
 
@@ -189,7 +189,7 @@ def resultados_detalle_view(request):
     n_days_ago = today - timedelta(days=DAYS_DIFFERENCE)
     limit_date_string = n_days_ago.strftime('%Y-%m-%d')
 
-    # ✅ Tomar el año desde la sesión si existe
+    #  Tomar el año desde la sesión si existe
     year_from_form = clima_params.get('año')
     if year_from_form:
         current_year = int(year_from_form)
@@ -199,16 +199,16 @@ def resultados_detalle_view(request):
     # Preparamos el contexto
     context = {
         'data': clima_params,
-        'current_year': current_year,     # ✅ ahora usa el año ingresado
+        'current_year': current_year,      # ✅ ahora usa el año ingresado
         'current_month': today.month, 
-        'limit_date': limit_date_string,  # Enviamos la fecha límite (hace 1 día)
+        'limit_date': limit_date_string,   # Enviamos la fecha límite (hace 1 día)
         'forecast_url': 'pronostico_detalle'
     }
     
     return render(request, 'myapp/resultados_detalle.html', context)
 
 # ==============================================================================
-# ✅ NUEVA VISTA DE DETALLE (pronostico_detalle_view) - Diario/Forecast
+#  NUEVA VISTA DE DETALLE (pronostico_detalle_view) - Diario/Forecast
 # ==============================================================================
 def pronostico_detalle_view(request):
     """
@@ -252,7 +252,7 @@ def fetch_clima_data_ajax(request):
     year = int(data.get('year'))
     month = int(data.get('month'))
     is_forecast = data.get('is_forecast', False) 
-    period_end_limit = data.get('period_end')    
+    period_end_limit = data.get('period_end')   
 
     if not region_code:
         return JsonResponse({'error': 'Falta el código de la región'}, status=400)
@@ -368,7 +368,7 @@ def extract_hourly_temps(api_data):
 
 
 # ==============================================================================
-# ✅ NUEVA VISTA AJAX: fetch_pronostico_ajax - Diario/Forecast
+#  NUEVA VISTA AJAX: fetch_pronostico_ajax - Diario/Forecast
 # ==============================================================================
 @csrf_exempt 
 def fetch_pronostico_ajax(request):
@@ -472,4 +472,151 @@ def fetch_pronostico_ajax(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error inesperado del servidor: {e}'}, status=500)
     
+
+# ==============================================================================
+# ==============================================================================
+#  INICIO DEL NUEVO CÓDIGO 
+
+# ==============================================================================
+# ==============================================================================
+
+
+
+# ==============================================================================
+# VISTA (PÁGINA): Página de Evolución Histórica (Gráficos)
+# ==============================================================================
+def evolucion_historica_view(request):
+    """
+    Renderiza la página que contendrá los gráficos de evolución histórica.
+    """
+    # Hacemos una copia de los parámetros de la sesión
+    clima_params = request.session.get('clima_params', {}).copy()
     
+    if not clima_params:
+        return redirect('consulta_clima')
+    
+    # ✅ CORRECCIÓN: Asegurarse de que esta vista también añada la imagen_fondo
+    region_code = clima_params.get('region_code')
+    if region_code:
+        clima_params['imagen_fondo'] = REGION_BACKGROUNDS.get(region_code)
+    
+    context = {
+        'data': clima_params, # 'data' ahora SÍ contiene 'imagen_fondo'
+    }
+    return render(request, 'myapp/evolucion_historica.html', context)
+
+
+# ==============================================================================
+# FUNCIÓN AYUDANTE: Procesador de datos Mensuales -> Anuales
+# ==============================================================================
+def process_monthly_data_for_charts(monthly_data):
+    """
+    Toma los datos mensuales de la API (ej: 900 meses)
+    y los agrupa en datos anuales listos para los gráficos.
+    """
+    years_data = {}
+    time_list = monthly_data.get('time', [])
+    temp_max_means = monthly_data.get('temperature_2m_max', [])
+    temp_min_means = monthly_data.get('temperature_2m_min', [])
+    precip_sums = monthly_data.get('precipitation_sum', [])
+    wind_maxes = monthly_data.get('wind_speed_10m_max', [])
+    radiation_sums = monthly_data.get('shortwave_radiation_sum', [])
+    humidity_maxes = monthly_data.get('relative_humidity_2m_max', [])
+
+    for i, time_str in enumerate(time_list):
+        year = int(time_str[:4])
+        if year not in years_data:
+            years_data[year] = {
+                'temp_max_list': [], 'temp_min_list': [], 'precip_sum_list': [],
+                'wind_max_list': [], 'radiation_sum_list': [], 'humidity_max_list': [],
+                'temp_max_abs_list': [], 'temp_min_abs_list': [],
+            }
+        
+        # Añadir valores a las listas (con comprobación de seguridad)
+        if temp_max_means and i < len(temp_max_means): years_data[year]['temp_max_list'].append(temp_max_means[i])
+        if temp_min_means and i < len(temp_min_means): years_data[year]['temp_min_list'].append(temp_min_means[i])
+        if precip_sums and i < len(precip_sums): years_data[year]['precip_sum_list'].append(precip_sums[i])
+        if wind_maxes and i < len(wind_maxes): years_data[year]['wind_max_list'].append(wind_maxes[i])
+        if radiation_sums and i < len(radiation_sums): years_data[year]['radiation_sum_list'].append(radiation_sums[i])
+        if humidity_maxes and i < len(humidity_maxes): years_data[year]['humidity_max_list'].append(humidity_maxes[i])
+        if temp_max_means and i < len(temp_max_means): years_data[year]['temp_max_abs_list'].append(temp_max_means[i])
+        if temp_min_means and i < len(temp_min_means): years_data[year]['temp_min_abs_list'].append(temp_min_means[i])
+
+    chart_data = []
+    sorted_years = sorted(years_data.keys())
+    
+    for year in sorted_years:
+        data = years_data[year]
+        
+        def avg(l): return round(sum(l) / len(l), 1) if l and len(l) > 0 else 0.0
+        def sum_r(l): return round(sum(l), 1) if l else 0.0
+        def max_r(l): return round(max(l), 1) if l else 0.0
+        def min_r(l): return round(min(l), 1) if l else 0.0
+
+        chart_data.append({
+            'year': year,
+            'temp_max_avg': avg(data['temp_max_list']),
+            'temp_min_avg': avg(data['temp_min_list']),
+            'precip_sum': sum_r(data['precip_sum_list']),
+            'wind_max': max_r(data['wind_max_list']),
+            'radiation_sum': sum_r(data['radiation_sum_list']),
+            'humidity_max_abs': max_r(data['humidity_max_list']),
+            'temp_max_abs': max_r(data['temp_max_abs_list']),
+            'temp_min_abs': min_r(data['temp_min_abs_list']),
+        })
+    return chart_data
+
+
+# ==============================================================================
+# VISTA AJAX: Carga de Datos para Gráficos
+# ==============================================================================
+@csrf_exempt 
+def fetch_evolucion_ajax(request):
+    """
+    Maneja la solicitud AJAX para la página de Evolución Histórica.
+    """
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Método no permitido'}, status=405)
+
+    try:
+        data = json.loads(request.body)
+        region_code = data.get('region_code')
+        if not region_code:
+            return JsonResponse({'error': 'Falta el código de la región'}, status=400)
+        
+        lat, lon = REGION_COORDS.get(region_code)
+        
+        API_URL = "https://archive-api.open-meteo.com/v1/archive" 
+        start_date = "1950-01-01" 
+        end_date = date.today().strftime('%Y-%m-%d')
+
+        params = {
+            'latitude': lat,
+            'longitude': lon,
+            'start_date': start_date,
+            'end_date': end_date, 
+            'monthly': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum,relative_humidity_2m_max', 
+            'timezone': 'auto'
+        }
+
+        response = requests.get(API_URL, params=params)
+        response.raise_for_status() 
+        api_data = response.json()
+        
+        # ✅ CORRECCIÓN: Mi error de tipeo (era status=44)
+        if not api_data.get('monthly'):
+             return JsonResponse({'success': False, 'message': 'API no devolvió datos mensuales.'}, status=404)
+
+        chart_data = process_monthly_data_for_charts(api_data['monthly'])
+        
+        return JsonResponse({
+            'success': True,
+            'data': chart_data
+        })
+            
+    except requests.exceptions.HTTPError as e:
+        return JsonResponse({'success': False, 'message': f'Error API: {response.status_code}'}, status=500)
+    except Exception as e:
+        # Para depurar, imprimimos el error en la terminal del servidor
+        print(f"Error inesperado en fetch_evolucion_ajax: {e}")
+        return JsonResponse({'success': False, 'message': f'Error inesperado del servidor: {e}'}, status=500)

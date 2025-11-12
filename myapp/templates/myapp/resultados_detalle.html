@@ -76,12 +76,16 @@
 
       <!-- Barra de modo + Ir a Pronóstico -->
       <div class="controls-row" style="justify-content:space-between; align-items:center;">
-        <div class="mode-switch" id="modeSwitchHist">
-          <button type="button" id="btnModeYear" class="active">Año</button>
-          <button type="button" id="btnModeMonth">Mes</button>
-        </div>
-        <a class="btn-clean btn-lg" href="{% url 'pronostico_detalle' %}">Ir a Pronóstico</a>
+          <div class="mode-switch" id="modeSwitchHist">
+              <button type="button" id="btnModeYear" class="active">Año</button>
+              <button type="button" id="btnModeMonth">Mes</button>
       </div>
+
+      <div style="display:flex; gap:10px;">
+          <a class="btn-clean" href="{% url 'pronostico_detalle' %}">Ir a Pronóstico</a>
+          <a class="btn-clean btn-lg" href="{% url 'evolucion_historica' %}">Ver Evolución Histórica</a>
+      </div>
+  </div>
 
       <!-- Controles de AÑO -->
       <div id="controlsYear">
