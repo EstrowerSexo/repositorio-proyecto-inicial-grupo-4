@@ -6,7 +6,7 @@
 	font-family: 'Montserrat', sans-serif; /* Se usa la fuente importada en el HTML */
 }
 
-/* 🏔️ Estilo del Fondo */
+/* Estilo del Fondo */
 body {
 	height: 100vh;
 	display: flex;
@@ -38,7 +38,7 @@ body {
 }
 
 .card {
-	/* Fondo semi-transparente que permite ver el fondo pero con filtro */
+	/* Fondo semi transparente que permite ver el fondo pero con filtro */
 	background: rgba(255, 255, 255, 0.2); 
 	backdrop-filter: blur(10px); /* Efecto clave: desenfoque del fondo (Crystal Clear UI) */
 	padding: 80px;
@@ -202,4 +202,22 @@ select:focus {
 	.card h1 {
 		font-size: 2rem;
 	}
+
+.year-input{
+	width:110px;
+	background:#101318;
+	color:white;
+	border:0;
+	border-radius:8px;
+	padding:10px 14px;
+	font-weight:700;
+	box-shadow:0 2px 8px rgba(0,0,0,.25);
+	text-align:center;
 }
+
+.year-input:focus{
+	outline:none;
+	background:#2a3b4f;
+}
+}
+

@@ -10,6 +10,26 @@
 
   <!-- Ajustes visuales específicos pedidos -->
   <style>
+    /* wea para cambiar el año bonita*/ 
+.year-input{
+  width:110px;
+  background:#101318;     /* mismo gris que los botones */
+  color:white;
+  border:0;
+  border-radius:8px;
+  padding:10px 14px;
+  font-weight:700;
+  box-shadow:0 2px 8px rgba(0,0,0,.25);
+  text-align:center;
+}
+
+.year-input:focus{
+  outline:none;
+  background:#2a3b4f;
+}
+
+.year-select:focus{ outline:none; }
+.year-select:hover{ background:#2a3b4f; }
     /* Botón genérico (gris del sitio) */
     .btn-clean{
       display:inline-block;
@@ -89,9 +109,24 @@
 
       <!-- Controles de AÑO -->
       <div id="controlsYear">
+        <!-- selector de año XD-->
+  <div class="controls-row">
+    <label style="font-weight:700; opacity:.9; margin-right:6px;">Año:</label>
+    <input 
+      id="inputYear"
+      class="year-input"
+      type="number"
+      min="1950"
+      max="2025"
+      step="1"
+      value="{{ current_year }}"
+    />
+  </div>
+
+
+        <!-- Botones antiguos NO TOCAAAAR-->
         <div class="controls-row">
           <button class="btn-clean" id="btnYearPrev">⟵ Año anterior</button>
-          <div style="font-weight:700">Año: <span id="lblYear">{{ current_year }}</span></div>
           <button class="btn-clean" id="btnYearNext">Año siguiente ⟶</button>
         </div>
       </div>
@@ -148,8 +183,8 @@
     const LON = {{ data.lon|floatformat:"6" }};
     let curYear = {{ current_year }};
     const LIMIT_END = "{{ limit_date }}"; // YYYY-MM-DD
+    const MIN_YEAR = 1950;
     const MAX_YEAR = 2025;
-
     /* ---------- MAPA ---------- */
     (function initMap(){
       const map = L.map('map', {zoomControl:true}).setView([LAT, LON], 6);
@@ -195,16 +230,23 @@
     }
 
     async function loadYear(y){
-      document.getElementById('lblYear').textContent = y;
+      // Actualizamos la variable global
+      curYear = y;
+
+      // Reflejamos el año en el input
+      const input = document.getElementById('inputYear');
+      if(input) input.value = curYear;
+
+      // Llamamos a la API igual que antes
       const r = await callArchive(y, 0);
-      if(r?.success){ paintMetrics(r.metrics); const lbl=document.getElementById('lblPeriodo'); if(lbl) lbl.textContent=r.periodo_label||`Anual (${y})`; }
-      updateYearButtons();
-    }
-    async function loadMonth(m){
-      const r = await callArchive(curYear, m);
-      if(r?.success){ paintMetrics(r.metrics); const lbl=document.getElementById('lblPeriodo'); if(lbl) lbl.textContent=r.periodo_label||'--'; }
-      updateYearButtons();
-    }
+      if(r?.success){
+        paintMetrics(r.metrics);
+        const lbl = document.getElementById('lblPeriodo');
+        if(lbl) lbl.textContent = r.periodo_label || `Anual (${y})`;
+  }
+
+  updateYearButtons();
+}
 
     /* ---------- MODO ---------- */
     const btnModeYear = document.getElementById('btnModeYear');
@@ -233,8 +275,42 @@
     const btnYearNext = document.getElementById('btnYearNext');
 
     function updateYearButtons(){
-      btnYearNext.disabled = (curYear >= MAX_YEAR);
-    }
+      const btnYearPrev = document.getElementById('btnYearPrev');
+      const btnYearNext = document.getElementById('btnYearNext');
+      const inputYear = document.getElementById('inputYear');
+
+      if(btnYearNext) btnYearNext.disabled = (curYear >= MAX_YEAR);
+      if(btnYearPrev) btnYearPrev.disabled = (curYear <= MIN_YEAR);
+
+      // Mantener el input sincronizado
+      if(inputYear && inputYear.value !== String(curYear)){
+        inputYear.value = curYear;
+  }
+}
+// Input manual de año
+const inputYear = document.getElementById('inputYear');
+
+if(inputYear){
+  inputYear.addEventListener('change', ()=>{
+      let y = parseInt(inputYear.value, 10);
+      if(isNaN(y)) return;
+
+      y = Math.max(MIN_YEAR, Math.min(MAX_YEAR, y));
+      inputYear.value = y;
+
+      curYear = y;
+      setMode('year');
+      updateYearButtons();
+  });
+
+  inputYear.addEventListener('input', ()=>{
+      if(inputYear.value.length > 4){
+          inputYear.value = inputYear.value.slice(0,4);
+      }
+  });
+}
+
+
 
     btnYearPrev.onclick = ()=>{ curYear--; setMode('year'); };
     btnYearNext.onclick = ()=>{
