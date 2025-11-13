@@ -7,16 +7,13 @@
     
     <link rel="stylesheet" href="{% static 'css/detalle.css' %}">
     
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
-        /* Estilo para los contenedores de gráficos */
         .chart-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr; /* 2 columnas */
+            /* 2x2 grid */
+            grid-template-columns: 1fr 1fr;
             gap: 25px;
             margin-top: 20px;
         }
@@ -31,8 +28,6 @@
             margin-bottom: 15px;
             color: #333;
         }
-
-        /* Indicador de carga */
         #loading-spinner {
             text-align: center;
             font-size: 1.2rem;
@@ -40,10 +35,9 @@
             padding: 50px;
             color: #555;
         }
-
-        /* Media query para 1 columna en móviles */
         @media (max-width: 900px) {
             .chart-grid {
+                /* 1 columna en móvil */
                 grid-template-columns: 1fr;
             }
         }
@@ -56,7 +50,7 @@
         <div class="card-detalle">
 
             <div class="header-detalle">
-                <h1>Evolución Histórica (1950 - Hoy)</h1>
+                <h1>Evolución Histórica</h1>
                 <div class="subtitle">Región de {{ data.region_nombre }}</div>
             </div>
 
@@ -65,94 +59,48 @@
                     <a class="btn-clean" href="{% url 'resultados_detalle' %}">Histórico (Año/Mes)</a>
                     <a class="btn-clean" href="{% url 'pronostico_detalle' %}">Pronóstico Diario</a>
                 </div>
+                <a href="{% url 'consulta_clima' %}" class="btn-clean" style="padding: 12px 18px;">← Nueva Consulta</a>
             </div>
 
-            <div class="content-grid">
+            <div id="charts-wrapper" style="margin-top: 20px;">
                 
-                <div class="left-column">
-                    <h3>🌍 Ubicación Geográfica</h3>
-                    <div id="map" class="map-section"></div>
-                    <div style="padding:10px; text-align:center;">
-                        <p>Mostrando datos históricos para la región.</p>
-                        <a href="{% url 'consulta_clima' %}" class="back-button" style="width:auto; padding: 10px 20px;">← Nueva Consulta</a>
-                    </div>
+                <div id="loading-spinner">
+                    Cargando datos históricos...
                 </div>
 
-                <div id="charts-wrapper">
+                <div class="chart-grid" id="chart-grid-container" style="display:none;">
                     
-                    <div id="loading-spinner">
-                        Cargando datos históricos (1950-Hoy)...
+                    <div class="chart-container">
+                        <h3>T° Máx Promedio Anual (°C)</h3>
+                        <canvas id="chartTempMaxAvg"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>T° Mín Promedio Anual (°C)</h3>
+                        <canvas id="chartTempMinAvg"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Precipitación Total Anual (mm)</h3>
+                        <canvas id="chartPrecipSum"></canvas>
+                    </div>
+                    <div class="chart-container">
+                        <h3>Radiación Solar Anual (J/m²)</h3>
+                        <canvas id="chartRadiation"></canvas>
                     </div>
 
-                    <div class="chart-grid" id="chart-grid-container" style="display:none;">
-                        
-                        <div class="chart-container">
-                            <h3>T° Máx Promedio Anual (°C)</h3>
-                            <canvas id="chartTempMaxAvg"></canvas>
-                        </div>
-                        
-                        <div class="chart-container">
-                            <h3>T° Mín Promedio Anual (°C)</h3>
-                            <canvas id="chartTempMinAvg"></canvas>
-                        </div>
-
-                        <div class="chart-container">
-                            <h3>Precipitación Total Anual (mm)</h3>
-                            <canvas id="chartPrecipSum"></canvas>
-                        </div>
-
-                        <div class="chart-container">
-                            <h3>Viento Máximo Anual (km/h)</h3>
-                            <canvas id="chartWindMax"></canvas>
-                        </div>
-
-                        <div class="chart-container">
-                            <h3>T° Máx Absoluta Anual (°C)</h3>
-                            <canvas id="chartTempMaxAbs"></canvas>
-                        </div>
-                        
-                        <div class="chart-container">
-                            <h3>T° Mín Absoluta Anual (°C)</h3>
-                            <canvas id="chartTempMinAbs"></canvas>
-                        </div>
-
-                        <div class="chart-container">
-                            <h3>Radiación Solar Anual (J/m²)</h3>
-                            <canvas id="chartRadiation"></canvas>
-                        </div>
-
-                        <div class="chart-container">
-                            <h3>Humedad Máx Absoluta Anual (%)</h3>
-                            <canvas id="chartHumidity"></canvas>
-                        </div>
-
-                    </div>
                 </div>
             </div> </div>
     </div> <script>
         // Datos de contexto (inyectados por Django)
         const REGION_CODE = "{{ data.region_code }}";
         const REGION_NAME = "{{ data.region_nombre }}";
-        const LAT = {{ data.lat|floatformat:"6" }};
-        const LON = {{ data.lon|floatformat:"6" }};
+        // LAT y LON eliminados
         
-        // Esta es la URL REAL
         const AJAX_URL = "{% url 'fetch_evolucion_ajax' %}";
         
-        /* ---------- 1. INICIALIZAR MAPA ---------- */
-        (function initMap(){
-            const map = L.map('map', {zoomControl:true}).setView([LAT, LON], 6);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxZoom: 18, attribution: '&copy; OpenStreetMap'
-            }).addTo(map);
-            const marker = L.marker([LAT, LON]).addTo(map);
-            marker.bindPopup(`${REGION_NAME}`).openPopup();
-            setTimeout(()=> map.invalidateSize(), 300); // Arreglo para renderizado
-        })();
+        /* initMap() ELIMINADO */
 
-        /* ---------- 2. LÓGICA DE GRÁFICOS ---------- */
+        /* ---------- LÓGICA DE GRÁFICOS ---------- */
         
-        // Función auxiliar para crear un gráfico
         function createChart(canvasId, label, labels_x, data_y, color) {
             const el = document.getElementById(canvasId);
             if (!el) {
@@ -161,15 +109,15 @@
             }
             const ctx = el.getContext('2d');
             new Chart(ctx, {
-                type: 'scatter', // Gráfico de dispersión
+                type: 'scatter', 
                 data: {
-                    labels: labels_x, // Años (ej: [1950, 1951, ...])
+                    labels: labels_x,
                     datasets: [{
                         label: label,
                         data: data_y.map((value, index) => ({ x: labels_x[index], y: value })),
                         backgroundColor: color,
                         borderColor: color,
-                        showLine: false, // Mostrar solo puntos
+                        showLine: false,
                         pointRadius: 4,
                     }]
                 },
@@ -190,19 +138,15 @@
             });
         }
 
-        // Función principal que llama al AJAX y dibuja TODO
         async function loadChartData() {
             try {
                 const response = await fetch(AJAX_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    // NOTA: No necesitamos enviar el token CSRF porque 
-                    // la vista en views.py tiene @csrf_exempt
                     body: JSON.stringify({ region_code: REGION_CODE })
                 });
 
                 if (!response.ok) {
-                    // Si el servidor da 404 o 500, entrará aquí
                     throw new Error(`Error en la respuesta del servidor: ${response.status}`);
                 }
 
@@ -210,24 +154,17 @@
 
                 if (result.success && result.data.length > 0) {
                     const allData = result.data;
-                    
-                    // Preparar los arrays de datos para Chart.js
                     const years = allData.map(d => d.year);
                     
-                    // Ocultar spinner y mostrar gráficos
                     document.getElementById('loading-spinner').style.display = 'none';
                     document.getElementById('chart-grid-container').style.display = 'grid';
 
-                    // Crear los 8 gráficos
+                    // Solo llamamos a las 4 funciones de gráfico
                     createChart('chartTempMaxAvg', 'T° Max Avg', years, allData.map(d => d.temp_max_avg), 'rgba(255, 99, 132, 0.8)');
                     createChart('chartTempMinAvg', 'T° Min Avg', years, allData.map(d => d.temp_min_avg), 'rgba(54, 162, 235, 0.8)');
                     createChart('chartPrecipSum', 'Precipitación', years, allData.map(d => d.precip_sum), 'rgba(75, 192, 192, 0.8)');
-                    createChart('chartWindMax', 'Viento Max', years, allData.map(d => d.wind_max), 'rgba(153, 102, 255, 0.8)');
-                    createChart('chartTempMaxAbs', 'T° Max Abs', years, allData.map(d => d.temp_max_abs), 'rgba(255, 206, 86, 0.8)');
-                    createChart('chartTempMinAbs', 'T° Min Abs', years, allData.map(d => d.temp_min_abs), 'rgba(201, 203, 207, 0.8)');
                     createChart('chartRadiation', 'Radiación', years, allData.map(d => d.radiation_sum), 'rgba(255, 159, 64, 0.8)');
-                    createChart('chartHumidity', 'Humedad Max', years, allData.map(d => d.humidity_max_abs), 'rgba(46, 204, 113, 0.8)');
-
+                
                 } else {
                     document.getElementById('loading-spinner').textContent = 'No se pudieron cargar los datos históricos.';
                 }
@@ -238,10 +175,8 @@
             }
         }
 
-        // Iniciar la carga de datos cuando la página esté lista
         document.addEventListener('DOMContentLoaded', loadChartData);
 
     </script>
 </body>
 </html>
-```eof

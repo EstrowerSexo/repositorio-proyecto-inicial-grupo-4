@@ -59,12 +59,10 @@ REGION_BACKGROUNDS = {
 }
 
 # ==============================================================================
-# FUNCIÓN AUXILIAR: Cálculo de Métricas
+# FUNCIÓN AUXILIAR: Cálculo de Métricas (Original)
 # ==============================================================================
 def calculate_metrics(daily_data):
-    """
-    Calcula todas las métricas clave de un conjunto de datos diarios.
-    """
+    # Esta función se mantiene igual ya que la usa 'fetch_clima_data_ajax'
     times = daily_data.get('time', [])
     temps_max = daily_data.get('temperature_2m_max', [])
     temps_min = daily_data.get('temperature_2m_min', [])
@@ -98,22 +96,16 @@ def calculate_metrics(daily_data):
 
 
 # ==============================================================================
-# VISTA PRINCIPAL (clima_view)
+# VISTAS DE PÁGINA (clima_view, resultados_detalle_view, pronostico_detalle_view)
 # ==============================================================================
 def clima_view(request):
-    """
-    Maneja el formulario de búsqueda.
-    """
     form = ClimaSearchForm()
     mensaje_error = None
-
     if request.method == 'POST':
         form = ClimaSearchForm(request.POST)
-
         if form.is_valid():
             region_code = form.cleaned_data['region']
             año_buscado = form.cleaned_data['año']
-
             try:
                 año_buscado = int(año_buscado)
                 if año_buscado < 1950 or año_buscado > date.today().year:
@@ -124,7 +116,6 @@ def clima_view(request):
             if not mensaje_error:
                 lat, lon = REGION_COORDS.get(region_code)
                 region_nombre = dict(REGIONES_CHOICES).get(region_code)
-
                 request.session['clima_params'] = {
                     'region_nombre': region_nombre,
                     'region_code': region_code,
@@ -135,38 +126,21 @@ def clima_view(request):
                 }
                 return redirect('resultados_detalle')
 
-    context = {
-        'form': form,
-        'regiones': REGIONES_CHOICES,
-        'mensaje_error': mensaje_error,
-    }
+    context = { 'form': form, 'regiones': REGIONES_CHOICES, 'mensaje_error': mensaje_error }
     return render(request, 'myapp/consulta_clima.html', context)
 
-
-# ==============================================================================
-# VISTA DE DETALLE (resultados_detalle_view) - Histórico (Anual/Mensual)
-# ==============================================================================
 def resultados_detalle_view(request):
-    """
-    Muestra el detalle histórico (Anual/Mensual).
-    """
     clima_params = request.session.get('clima_params', {}).copy()
-    
     if not clima_params:
         return redirect('consulta_clima') 
-
     region_code = clima_params.get('region_code')
     if region_code:
         clima_params['imagen_fondo'] = REGION_BACKGROUNDS.get(region_code)
-
     today = date.today()
-    DAYS_DIFFERENCE = 1 
-    n_days_ago = today - timedelta(days=DAYS_DIFFERENCE)
+    n_days_ago = today - timedelta(days=1)
     limit_date_string = n_days_ago.strftime('%Y-%m-%d')
-
     year_from_form = clima_params.get('año')
     current_year = int(year_from_form) if year_from_form else today.year
-    
     context = {
         'data': clima_params,
         'current_year': current_year,
@@ -176,21 +150,13 @@ def resultados_detalle_view(request):
     }
     return render(request, 'myapp/resultados_detalle.html', context)
 
-# ==============================================================================
-# VISTA DE DETALLE (pronostico_detalle_view) - Diario/Forecast
-# ==============================================================================
 def pronostico_detalle_view(request):
-    """
-    Muestra el detalle del pronóstico y datos diarios recientes.
-    """
     clima_params = request.session.get('clima_params', {}).copy()
     if not clima_params:
         return redirect('consulta_clima')
-    
     region_code = clima_params.get('region_code')
     if region_code:
         clima_params['imagen_fondo'] = REGION_BACKGROUNDS.get(region_code)
-    
     context = {
         'data': clima_params,
         'today_date_string': today.strftime('%Y-%m-%d'),
@@ -199,16 +165,12 @@ def pronostico_detalle_view(request):
 
 
 # ==============================================================================
-# VISTA AJAX: fetch_clima_data_ajax - Histórico (Anual/Mensual)
+# VISTAS AJAX (fetch_clima_data_ajax, fetch_pronostico_ajax)
 # ==============================================================================
 @csrf_exempt 
 def fetch_clima_data_ajax(request):
-    """
-    Maneja la solicitud AJAX para Histórico Anual/Mensual (API ARCHIVE).
-    """
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
-
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -224,7 +186,6 @@ def fetch_clima_data_ajax(request):
         return JsonResponse({'error': 'Falta el código de la región'}, status=400)
     
     lat, lon = REGION_COORDS.get(region_code)
-
     if is_forecast:
         return JsonResponse({'success': False, 'message': 'El pronóstico se maneja en una URL diferente.'}, status=400)
     
@@ -282,52 +243,10 @@ def fetch_clima_data_ajax(request):
     except Exception as e:
         return JsonResponse({'success': False, 'message': f'Error inesperado del servidor: {e}'}, status=500)
     
-# ==============================================================================
-# FUNCIÓN AUXILIAR: Extracción de Temperaturas por Hora (12 PM y 6 PM)
-# ==============================================================================
-def extract_hourly_temps(api_data):
-    """
-    Busca la temperatura a las 12:00 (mediodía) y 18:00 (tarde).
-    """
-    hourly_data = api_data.get('hourly', {})
-    hourly_time = hourly_data.get('time', [])
-    hourly_temp = hourly_data.get('temperature_2m', [])
-    
-    if not hourly_time or not hourly_temp:
-        return None
-
-    temp_12pm = 0.0
-    temp_6pm = 0.0
-    found_12 = False
-    found_18 = False
-    
-    for i, t in enumerate(hourly_time):
-        if t.endswith('T12:00'):
-            temp_12pm = round(hourly_temp[i], 1)
-            found_12 = True 
-        elif t.endswith('T18:00'):
-            temp_6pm = round(hourly_temp[i], 1)
-            found_18 = True
-        if found_12 and found_18:
-            break
-
-    return {
-        'temp_12pm': temp_12pm,
-        'temp_6pm': temp_6pm,
-    }
-
-
-# ==============================================================================
-# VISTA AJAX: fetch_pronostico_ajax - Diario/Forecast
-# ==============================================================================
 @csrf_exempt 
 def fetch_pronostico_ajax(request):
-    """
-    Maneja la solicitud AJAX para Pronóstico diario y datos históricos recientes.
-    """
     if request.method != 'POST':
         return JsonResponse({'error': 'Método no permitido'}, status=405)
-
     try:
         data = json.loads(request.body)
     except json.JSONDecodeError:
@@ -335,12 +254,10 @@ def fetch_pronostico_ajax(request):
 
     region_code = data.get('region_code')
     days_offset = int(data.get('days_offset', 0))
-    
     if not region_code:
         return JsonResponse({'error': 'Falta el código de la región'}, status=400)
     
     lat, lon = REGION_COORDS.get(region_code)
-
     today = date.today()
     target_date = today + timedelta(days=days_offset)
     target_date_string = target_date.strftime('%Y-%m-%d')
@@ -375,7 +292,6 @@ def fetch_pronostico_ajax(request):
         response = requests.get(API_URL, params=params)
         response.raise_for_status() 
         api_data = response.json()
-        
         metrics = extract_hourly_temps(api_data)
         daily_metrics = calculate_metrics(api_data.get('daily', {}))
         
@@ -398,13 +314,149 @@ def fetch_pronostico_ajax(request):
 
 # ==============================================================================
 # ==============================================================================
-# NUEVO CÓDIGO: EVOLUCIÓN HISTÓRICA
+# NUEVO CÓDIGO: EVOLUCIÓN HISTÓRICA (CON DATOS HARCODEADOS)
 # ==============================================================================
 # ==============================================================================
 
+# 1. DATOS "HARDCODEADOS" (Pegados) DE LA REGIÓN METROPOLITANA (1950-2025)
+# ✅ ACTUALIZADO: AÑADIDOS LOS AÑOS 1950-1960
+DATOS_METROPOLITANA = [
+    # --- Nuevos datos (1950-1960) ---
+    { 'year': 1950, 'temp_max_avg': 21.6, 'temp_min_avg': 9.1, 'precip_sum': 216.2, 'radiation_sum': 7824.0 },
+    { 'year': 1951, 'temp_max_avg': 21.6, 'temp_min_avg': 9.6, 'precip_sum': 757.9, 'radiation_sum': 7511.6 },
+    { 'year': 1952, 'temp_max_avg': 22.4, 'temp_min_avg': 10.3, 'precip_sum': 308.0, 'radiation_sum': 7754.8 },
+    { 'year': 1953, 'temp_max_avg': 21.4, 'temp_min_avg': 9.6, 'precip_sum': 489.8, 'radiation_sum': 7661.3 },
+    { 'year': 1954, 'temp_max_avg': 21.3, 'temp_min_avg': 9.2, 'precip_sum': 709.0, 'radiation_sum': 7438.2 },
+    { 'year': 1955, 'temp_max_avg': 21.8, 'temp_min_avg': 8.8, 'precip_sum': 118.8, 'radiation_sum': 8084.1 },
+    { 'year': 1956, 'temp_max_avg': 20.8, 'temp_min_avg': 8.5, 'precip_sum': 519.8, 'radiation_sum': 7651.4 },
+    { 'year': 1957, 'temp_max_avg': 22.3, 'temp_min_avg': 10.0, 'precip_sum': 714.6, 'radiation_sum': 7483.9 },
+    { 'year': 1958, 'temp_max_avg': 21.5, 'temp_min_avg': 9.3, 'precip_sum': 431.7, 'radiation_sum': 7501.4 },
+    { 'year': 1959, 'temp_max_avg': 21.9, 'temp_min_avg': 9.4, 'precip_sum': 494.3, 'radiation_sum': 7566.2 },
+    { 'year': 1960, 'temp_max_avg': 22.2, 'temp_min_avg': 9.6, 'precip_sum': 296.3, 'radiation_sum': 7831.9 },
+    # --- Datos anteriores (1961-1970) ---
+    { 'year': 1961, 'temp_max_avg': 21.9, 'temp_min_avg': 9.8, 'precip_sum': 385.9, 'radiation_sum': 7763.4 },
+    { 'year': 1962, 'temp_max_avg': 22.3, 'temp_min_avg': 9.5, 'precip_sum': 303.7, 'radiation_sum': 7858.9 },
+    { 'year': 1963, 'temp_max_avg': 19.9, 'temp_min_avg': 8.7, 'precip_sum': 561.9, 'radiation_sum': 7310.5 },
+    { 'year': 1964, 'temp_max_avg': 21.2, 'temp_min_avg': 9.0, 'precip_sum': 275.1, 'radiation_sum': 7582.1 },
+    { 'year': 1965, 'temp_max_avg': 20.5, 'temp_min_avg': 8.7, 'precip_sum': 543.3, 'radiation_sum': 7313.9 },
+    { 'year': 1966, 'temp_max_avg': 20.3, 'temp_min_avg': 8.3, 'precip_sum': 384.8, 'radiation_sum': 7581.0 },
+    { 'year': 1967, 'temp_max_avg': 20.2, 'temp_min_avg': 8.4, 'precip_sum': 278.7, 'radiation_sum': 7604.4 },
+    { 'year': 1968, 'temp_max_avg': 21.5, 'temp_min_avg': 9.1, 'precip_sum': 61.6, 'radiation_sum': 7799.4 },
+    { 'year': 1969, 'temp_max_avg': 21.0, 'temp_min_avg': 9.4, 'precip_sum': 376.9, 'radiation_sum': 7403.2 },
+    { 'year': 1970, 'temp_max_avg': 21.0, 'temp_min_avg': 8.9, 'precip_sum': 282.9, 'radiation_sum': 7765.5 },
+    # --- Datos anteriores (1971-1980) ---
+    { 'year': 1971, 'temp_max_avg': 21.0, 'temp_min_avg': 8.6, 'precip_sum': 303.3, 'radiation_sum': 7761.7 },
+    { 'year': 1972, 'temp_max_avg': 21.6, 'temp_min_avg': 9.8, 'precip_sum': 630.6, 'radiation_sum': 7318.9 },
+    { 'year': 1973, 'temp_max_avg': 20.7, 'temp_min_avg': 9.0, 'precip_sum': 445.1, 'radiation_sum': 7598.8 },
+    { 'year': 1974, 'temp_max_avg': 20.9, 'temp_min_avg': 9.0, 'precip_sum': 580.9, 'radiation_sum': 7704.8 },
+    { 'year': 1975, 'temp_max_avg': 20.9, 'temp_min_avg': 8.7, 'precip_sum': 460.1, 'radiation_sum': 7606.7 },
+    { 'year': 1976, 'temp_max_avg': 20.7, 'temp_min_avg': 8.3, 'precip_sum': 466.3, 'radiation_sum': 7546.0 },
+    { 'year': 1977, 'temp_max_avg': 21.3, 'temp_min_avg': 9.8, 'precip_sum': 661.8, 'radiation_sum': 7584.6 },
+    { 'year': 1978, 'temp_max_avg': 21.9, 'temp_min_avg': 10.2, 'precip_sum': 692.3, 'radiation_sum': 7531.8 },
+    { 'year': 1979, 'temp_max_avg': 21.1, 'temp_min_avg': 9.2, 'precip_sum': 388.7, 'radiation_sum': 7396.2 },
+    { 'year': 1980, 'temp_max_avg': 20.6, 'temp_min_avg': 9.0, 'precip_sum': 694.8, 'radiation_sum': 7311.3 },
+    # --- Datos anteriores (1981-1990) ---
+    { 'year': 1981, 'temp_max_avg': 20.9, 'temp_min_avg': 9.2, 'precip_sum': 474.8, 'radiation_sum': 7582.6 },
+    { 'year': 1982, 'temp_max_avg': 20.4, 'temp_min_avg': 9.8, 'precip_sum': 1095.2, 'radiation_sum': 7081.9 },
+    { 'year': 1983, 'temp_max_avg': 20.5, 'temp_min_avg': 8.8, 'precip_sum': 616.4, 'radiation_sum': 7336.2 },
+    { 'year': 1984, 'temp_max_avg': 19.7, 'temp_min_avg': 8.8, 'precip_sum': 830.9, 'radiation_sum': 7281.7 },
+    { 'year': 1985, 'temp_max_avg': 20.8, 'temp_min_avg': 9.1, 'precip_sum': 332.7, 'radiation_sum': 7500.4 },
+    { 'year': 1986, 'temp_max_avg': 20.8, 'temp_min_avg': 9.7, 'precip_sum': 641.5, 'radiation_sum': 7239.9 },
+    { 'year': 1987, 'temp_max_avg': 20.8, 'temp_min_avg': 9.5, 'precip_sum': 900.1, 'radiation_sum': 7287.1 },
+    { 'year': 1988, 'temp_max_avg': 21.7, 'temp_min_avg': 9.4, 'precip_sum': 288.8, 'radiation_sum': 7794.6 },
+    { 'year': 1989, 'temp_max_avg': 21.9, 'temp_min_avg': 10.0, 'precip_sum': 473.2, 'radiation_sum': 7728.1 },
+    { 'year': 1990, 'temp_max_avg': 21.2, 'temp_min_avg': 9.1, 'precip_sum': 364.8, 'radiation_sum': 7547.6 },
+    # --- Datos anteriores (1991-2000) ---
+    { 'year': 1991, 'temp_max_avg': 20.2, 'temp_min_avg': 9.1, 'precip_sum': 658.9, 'radiation_sum': 7283.8 },
+    { 'year': 1992, 'temp_max_avg': 20.2, 'temp_min_avg': 9.1, 'precip_sum': 658.9, 'radiation_sum': 7283.8 },
+    { 'year': 1993, 'temp_max_avg': 20.9, 'temp_min_avg': 9.4, 'precip_sum': 434.2, 'radiation_sum': 7482.1 },
+    { 'year': 1994, 'temp_max_avg': 21.4, 'temp_min_avg': 9.8, 'precip_sum': 374.8, 'radiation_sum': 7524.4 },
+    { 'year': 1995, 'temp_max_avg': 21.3, 'temp_min_avg': 9.8, 'precip_sum': 386.1, 'radiation_sum': 7602.8 },
+    { 'year': 1996, 'temp_max_avg': 21.5, 'temp_min_avg': 9.4, 'precip_sum': 382.5, 'radiation_sum': 7867.4 },
+    { 'year': 1997, 'temp_max_avg': 21.1, 'temp_min_avg': 10.1, 'precip_sum': 1103.5, 'radiation_sum': 7300.9 },
+    { 'year': 1998, 'temp_max_avg': 21.4, 'temp_min_avg': 9.4, 'precip_sum': 224.6, 'radiation_sum': 7645.4 },
+    { 'year': 1999, 'temp_max_avg': 20.3, 'temp_min_avg': 9.5, 'precip_sum': 504.6, 'radiation_sum': 7509.0 },
+    { 'year': 2000, 'temp_max_avg': 21.1, 'temp_min_avg': 9.7, 'precip_sum': 760.8, 'radiation_sum': 7592.9 },
+    # --- Datos anteriores (2001-2010) ---
+    { 'year': 2001, 'temp_max_avg': 21.1, 'temp_min_avg': 10.0, 'precip_sum': 636.3, 'radiation_sum': 7437.9 },
+    { 'year': 2002, 'temp_max_avg': 21.1, 'temp_min_avg': 9.8, 'precip_sum': 807.0, 'radiation_sum': 7373.2 },
+    { 'year': 2003, 'temp_max_avg': 22.0, 'temp_min_avg': 10.5, 'precip_sum': 324.4, 'radiation_sum': 7669.7 },
+    { 'year': 2004, 'temp_max_avg': 21.1, 'temp_min_avg': 9.8, 'precip_sum': 535.8, 'radiation_sum': 7415.4 },
+    { 'year': 2005, 'temp_max_avg': 20.8, 'temp_min_avg': 10.0, 'precip_sum': 711.2, 'radiation_sum': 7267.9 },
+    { 'year': 2006, 'temp_max_avg': 21.8, 'temp_min_avg': 10.6, 'precip_sum': 542.1, 'radiation_sum': 7479.4 },
+    { 'year': 2007, 'temp_max_avg': 20.4, 'temp_min_avg': 8.9, 'precip_sum': 385.1, 'radiation_sum': 7551.3 },
+    { 'year': 2008, 'temp_max_avg': 21.7, 'temp_min_avg': 10.5, 'precip_sum': 433.5, 'radiation_sum': 7427.8 },
+    { 'year': 2009, 'temp_max_avg': 21.7, 'temp_min_avg': 10.5, 'precip_sum': 433.5, 'radiation_sum': 7427.8 },
+    { 'year': 2010, 'temp_max_avg': 20.8, 'temp_min_avg': 9.3, 'precip_sum': 416.7, 'radiation_sum': 7683.9 },
+    # --- Datos anteriores (2011-2020) ---
+    { 'year': 2011, 'temp_max_avg': 21.4, 'temp_min_avg': 9.5, 'precip_sum': 311.1, 'radiation_sum': 7651.8 },
+    { 'year': 2012, 'temp_max_avg': 21.7, 'temp_min_avg': 10.1, 'precip_sum': 431.1, 'radiation_sum': 7452.2 },
+    { 'year': 2013, 'temp_max_avg': 21.7, 'temp_min_avg': 9.8, 'precip_sum': 275.3, 'radiation_sum': 7561.6 },
+    { 'year': 2014, 'temp_max_avg': 21.5, 'temp_min_avg': 9.9, 'precip_sum': 412.4, 'radiation_sum': 7501.8 },
+    { 'year': 2015, 'temp_max_avg': 22.0, 'temp_min_avg': 10.5, 'precip_sum': 486.7, 'radiation_sum': 7356.3 },
+    { 'year': 2016, 'temp_max_avg': 22.2, 'temp_min_avg': 10.7, 'precip_sum': 618.4, 'radiation_sum': 7320.9 },
+    { 'year': 2017, 'temp_max_avg': 21.6, 'temp_min_avg': 11.2, 'precip_sum': 438.1, 'radiation_sum': 7029.3 },
+    { 'year': 2018, 'temp_max_avg': 22.4, 'temp_min_avg': 11.2, 'precip_sum': 303.0, 'radiation_sum': 7127.2 },
+    { 'year': 2019, 'temp_max_avg': 23.3, 'temp_min_avg': 11.3, 'precip_sum': 166.0, 'radiation_sum': 7269.9 },
+    { 'year': 2020, 'temp_max_avg': 23.4, 'temp_min_avg': 11.5, 'precip_sum': 250.5, 'radiation_sum': 7500.2 },
+    # --- Datos anteriores (2021-2025) ---
+    { 'year': 2021, 'temp_max_avg': 22.6, 'temp_min_avg': 10.8, 'precip_sum': 302.2, 'radiation_sum': 7306.0 },
+    { 'year': 2022, 'temp_max_avg': 23.1, 'temp_min_avg': 11.6, 'precip_sum': 505.4, 'radiation_sum': 6934.7 },
+    { 'year': 2023, 'temp_max_avg': 23.1, 'temp_min_avg': 11.6, 'precip_sum': 505.4, 'radiation_sum': 6934.7 },
+    { 'year': 2024, 'temp_max_avg': 22.9, 'temp_min_avg': 11.2, 'precip_sum': 446.1, 'radiation_sum': 7148.3 },
+    { 'year': 2025, 'temp_max_avg': 22.3, 'temp_min_avg': 10.7, 'precip_sum': 351.3, 'radiation_sum': 5807.6 }
+]
+
+
+# 2. FUNCIÓN AYUDANTE (Simplificada para la API)
+def process_monthly_data_for_charts(monthly_data):
+    """
+    Toma los datos mensuales de la API y los agrupa en datos anuales.
+    """
+    years_data = {}
+    time_list = monthly_data.get('time', [])
+    temp_max_means = monthly_data.get('temperature_2m_max', [])
+    temp_min_means = monthly_data.get('temperature_2m_min', [])
+    precips = monthly_data.get('precipitation_sum', [])
+    radiation_sums = monthly_data.get('shortwave_radiation_sum', [])
+
+    for i, time_str in enumerate(time_list):
+        year = int(time_str[:4])
+        if year not in years_data:
+            years_data[year] = {
+                'temp_max_list': [], 'temp_min_list': [], 'precip_sum_list': [],
+                'radiation_sum_list': [],
+            }
+        
+        if temp_max_means and i < len(temp_max_means) and temp_max_means[i] is not None:
+            years_data[year]['temp_max_list'].append(temp_max_means[i])
+        if temp_min_means and i < len(temp_min_means) and temp_min_means[i] is not None:
+            years_data[year]['temp_min_list'].append(temp_min_means[i])
+        if precips and i < len(precips) and precips[i] is not None:
+            years_data[year]['precip_sum_list'].append(precips[i])
+        if radiation_sums and i < len(radiation_sums) and radiation_sums[i] is not None:
+            years_data[year]['radiation_sum_list'].append(radiation_sums[i])
+
+    chart_data = []
+    sorted_years = sorted(years_data.keys())
+    
+    for year in sorted_years:
+        data = years_data[year]
+        def avg(l): return round(sum(l) / len(l), 1) if l and len(l) > 0 else 0.0
+        def sum_r(l): return round(sum(l), 1) if l else 0.0
+
+        chart_data.append({
+            'year': year,
+            'temp_max_avg': avg(data['temp_max_list']),
+            'temp_min_avg': avg(data['temp_min_list']),
+            'precip_sum': sum_r(data['precip_sum_list']),
+            'radiation_sum': sum_r(data['radiation_sum_list']),
+        })
+    return chart_data
+
 
 # ==============================================================================
-# VISTA (PÁGINA): Página de Evolución Histórica (Gráficos)
+# VISTA (PÁGINA): Página de Evolución Histórica
 # ==============================================================================
 def evolucion_historica_view(request):
     """
@@ -426,79 +478,7 @@ def evolucion_historica_view(request):
 
 
 # ==============================================================================
-# FUNCIÓN AYUDANTE: Procesador de datos Mensuales -> Anuales (CORREGIDA)
-# ==============================================================================
-def process_monthly_data_for_charts(monthly_data):
-    """
-    Toma los datos mensuales de la API (ej: 900 meses)
-    y los agrupa en datos anuales listos para los gráficos.
-    """
-    years_data = {}
-    time_list = monthly_data.get('time', [])
-    temp_max_means = monthly_data.get('temperature_2m_max', [])
-    temp_min_means = monthly_data.get('temperature_2m_min', [])
-    precips = monthly_data.get('precipitation_sum', [])
-    wind_maxes = monthly_data.get('wind_speed_10m_max', [])
-    radiation_sums = monthly_data.get('shortwave_radiation_sum', [])
-    humidity_maxes = monthly_data.get('relative_humidity_2m_max', [])
-
-    for i, time_str in enumerate(time_list):
-        year = int(time_str[:4])
-        if year not in years_data:
-            years_data[year] = {
-                'temp_max_list': [], 'temp_min_list': [], 'precip_sum_list': [],
-                'wind_max_list': [], 'radiation_sum_list': [], 'humidity_max_list': [],
-                'temp_max_abs_list': [], 'temp_min_abs_list': [],
-            }
-        
-        # Añadir valores a las listas (CON VARIABLES CORRECTAS)
-        if temp_max_means and i < len(temp_max_means) and temp_max_means[i] is not None:
-            years_data[year]['temp_max_list'].append(temp_max_means[i])
-            years_data[year]['temp_max_abs_list'].append(temp_max_means[i])
-
-        if temp_min_means and i < len(temp_min_means) and temp_min_means[i] is not None:
-            years_data[year]['temp_min_list'].append(temp_min_means[i])
-            years_data[year]['temp_min_abs_list'].append(temp_min_means[i])
-            
-        if precips and i < len(precips) and precips[i] is not None:  # ✅ CORREGIDO
-            years_data[year]['precip_sum_list'].append(precips[i])
-            
-        if wind_maxes and i < len(wind_maxes) and wind_maxes[i] is not None:  # ✅ CORREGIDO
-            years_data[year]['wind_max_list'].append(wind_maxes[i])
-            
-        if radiation_sums and i < len(radiation_sums) and radiation_sums[i] is not None:  # ✅ CORREGIDO
-            years_data[year]['radiation_sum_list'].append(radiation_sums[i])
-            
-        if humidity_maxes and i < len(humidity_maxes) and humidity_maxes[i] is not None:  # ✅ CORREGIDO
-            years_data[year]['humidity_max_list'].append(humidity_maxes[i])
-
-    chart_data = []
-    sorted_years = sorted(years_data.keys())
-    
-    for year in sorted_years:
-        data = years_data[year]
-        
-        def avg(l): return round(sum(l) / len(l), 1) if l and len(l) > 0 else 0.0
-        def sum_r(l): return round(sum(l), 1) if l else 0.0
-        def max_r(l): return round(max(l), 1) if l else 0.0
-        def min_r(l): return round(min(l), 1) if l else 0.0
-
-        chart_data.append({
-            'year': year,
-            'temp_max_avg': avg(data['temp_max_list']),
-            'temp_min_avg': avg(data['temp_min_list']),
-            'precip_sum': sum_r(data['precip_sum_list']),
-            'wind_max': max_r(data['wind_max_list']),
-            'radiation_sum': sum_r(data['radiation_sum_list']),
-            'humidity_max_abs': max_r(data['humidity_max_list']),
-            'temp_max_abs': max_r(data['temp_max_abs_list']),
-            'temp_min_abs': min_r(data['temp_min_abs_list']),
-        })
-    return chart_data
-
-
-# ==============================================================================
-# VISTA AJAX: Carga de Datos para Gráficos (La función REAL)
+# VISTA AJAX: Carga de Datos para Gráficos (La función REAL + Lógica RM)
 # ==============================================================================
 @csrf_exempt 
 def fetch_evolucion_ajax(request):
@@ -514,9 +494,21 @@ def fetch_evolucion_ajax(request):
         if not region_code:
             return JsonResponse({'error': 'Falta el código de la región'}, status=400)
         
+        # ==================================================
+        # ✅ LÓGICA "HARDCODEADA"
+        # ==================================================
+        if region_code == 'METROPOLITANA':
+            print("--- DEVOLVIENDO DATOS 'HARDCODEADOS' (1951-2025) PARA METROPOLITANA ---")
+            # Devolvemos la lista de datos que pegamos arriba
+            return JsonResponse({
+                'success': True,
+                'data': DATOS_METROPOLITANA
+            })
+        # ==================================================
+        
+        # --- Lógica antigua (para OTRAS regiones) ---
+        print(f"--- USANDO API (4 MÉTRICAS) PARA REGIÓN: {region_code} ---")
         lat, lon = REGION_COORDS.get(region_code)
-        if not lat or not lon:
-            return JsonResponse({'error': 'Coordenadas no encontradas para la región'}, status=400)
         
         API_URL = "https://archive-api.open-meteo.com/v1/archive" 
         start_date = "1950-01-01" 
@@ -527,47 +519,26 @@ def fetch_evolucion_ajax(request):
             'longitude': lon,
             'start_date': start_date,
             'end_date': end_date, 
-            'monthly': 'temperature_2m_max,temperature_2m_min,precipitation_sum,wind_speed_10m_max,shortwave_radiation_sum,relative_humidity_2m_max', 
+            'monthly': 'temperature_2m_max,temperature_2m_min,precipitation_sum,shortwave_radiation_sum', 
             'timezone': 'auto'
         }
 
-        print(f"🔍 Solicitando datos para {region_code} ({lat}, {lon}) desde {start_date} hasta {end_date}")
-        
-        response = requests.get(API_URL, params=params, timeout=30)  # Added timeout
+        response = requests.get(API_URL, params=params)
         response.raise_for_status() 
         api_data = response.json()
         
-        print(f"✅ API respondió con {len(api_data.get('monthly', {}).get('time', []))} registros mensuales")
-        
         if not api_data.get('monthly'):
-             return JsonResponse({
-                 'success': False, 
-                 'message': 'API no devolvió datos mensuales para el rango solicitado.'
-             }, status=404)
+             return JsonResponse({'success': False, 'message': 'API no devolvió datos mensuales.'}, status=404)
 
         chart_data = process_monthly_data_for_charts(api_data['monthly'])
         
         return JsonResponse({
             'success': True,
-            'data': chart_data,
-            'total_years': len(chart_data)
+            'data': chart_data
         })
             
-    except requests.exceptions.Timeout:
-        print("⏰ Timeout en la solicitud a la API")
-        return JsonResponse({
-            'success': False, 
-            'message': 'Timeout: La API tardó demasiado en responder. Intenta con un rango más corto.'
-        }, status=504)
     except requests.exceptions.HTTPError as e:
-        print(f"❌ Error HTTP {response.status_code}: {e}")
-        return JsonResponse({
-            'success': False, 
-            'message': f'Error en la API externa: {response.status_code} - {str(e)}'
-        }, status=500)
+        return JsonResponse({'success': False, 'message': f'Error API: {response.status_code}'}, status=500)
     except Exception as e:
-        print(f"💥 Error inesperado en fetch_evolucion_ajax: {e}")
-        return JsonResponse({
-            'success': False, 
-            'message': f'Error interno del servidor: {str(e)}'
-        }, status=500)
+        print(f"Error inesperado en fetch_evolucion_ajax: {e}")
+        return JsonResponse({'success': False, 'message': f'Error inesperado del servidor: {e}'}, status=500)
