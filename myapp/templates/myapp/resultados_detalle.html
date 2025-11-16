@@ -11,25 +11,26 @@
   <!-- Ajustes visuales específicos pedidos -->
   <style>
     /* wea para cambiar el año bonita*/ 
-.year-input{
-  width:110px;
-  background:#101318;     /* mismo gris que los botones */
-  color:white;
-  border:0;
-  border-radius:8px;
-  padding:10px 14px;
-  font-weight:700;
-  box-shadow:0 2px 8px rgba(0,0,0,.25);
-  text-align:center;
-}
+    .year-input{
+      width:110px;
+      background:#101318;     /* mismo gris que los botones */
+      color:white;
+      border:0;
+      border-radius:8px;
+      padding:10px 14px;
+      font-weight:700;
+      box-shadow:0 2px 8px rgba(0,0,0,.25);
+      text-align:center;
+    }
 
-.year-input:focus{
-  outline:none;
-  background:#2a3b4f;
-}
+    .year-input:focus{
+      outline:none;
+      background:#2a3b4f;
+    }
 
-.year-select:focus{ outline:none; }
-.year-select:hover{ background:#2a3b4f; }
+    .year-select:focus{ outline:none; }
+    .year-select:hover{ background:#2a3b4f; }
+
     /* Botón genérico (gris del sitio) */
     .btn-clean{
       display:inline-block;
@@ -64,7 +65,13 @@
     .mode-switch button.active{ background:#2a3b4f; }
     .mode-switch button:not(.active):hover{ background:#2a3b4f; }
 
-    .controls-row{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin:10px 0 14px; }
+    .controls-row{
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+      margin:10px 0 14px;
+    }
 
     /* Pequeño espacio inferior para “flotar” sobre la barra gris */
     .footer-spacer{ height:30px; }
@@ -91,40 +98,41 @@
       <!-- Encabezado -->
       <div class="header-detalle">
         <h1>CLIMA CHILE - Resultados Detalle</h1>
-        <div class="subtitle">Análisis Histórico - Región de {{ data.region_nombre }} ({{ current_year }})</div>
+        <div class="subtitle">
+          Análisis Histórico - Región de {{ data.region_nombre }} ({{ current_year }})
+        </div>
       </div>
 
       <!-- Barra de modo + Ir a Pronóstico -->
       <div class="controls-row" style="justify-content:space-between; align-items:center;">
-          <div class="mode-switch" id="modeSwitchHist">
-              <button type="button" id="btnModeYear" class="active">Año</button>
-              <button type="button" id="btnModeMonth">Mes</button>
-      </div>
+        <div class="mode-switch" id="modeSwitchHist">
+          <button type="button" id="btnModeYear" class="active">Año</button>
+          <button type="button" id="btnModeMonth">Mes</button>
+        </div>
 
-      <div style="display:flex; gap:10px;">
+        <div style="display:flex; gap:10px;">
           <a class="btn-clean" href="{% url 'pronostico_detalle' %}">Ir a Pronóstico</a>
           <a class="btn-clean btn-lg" href="{% url 'evolucion_historica' %}">Ver Evolución Histórica</a>
+        </div>
       </div>
-  </div>
 
       <!-- Controles de AÑO -->
       <div id="controlsYear">
         <!-- selector de año XD-->
-  <div class="controls-row">
-    <label style="font-weight:700; opacity:.9; margin-right:6px;">Año:</label>
-    <input 
-      id="inputYear"
-      class="year-input"
-      type="number"
-      min="1950"
-      max="2025"
-      step="1"
-      value="{{ current_year }}"
-    />
-  </div>
+        <div class="controls-row">
+          <label style="font-weight:700; opacity:.9; margin-right:6px;">Año:</label>
+          <input 
+            id="inputYear"
+            class="year-input"
+            type="number"
+            min="1950"
+            max="2025"
+            step="1"
+            value="{{ current_year }}"
+          />
+        </div>
 
-
-        <!-- Botones antiguos NO TOCAAAAR-->
+        <!-- Botones año anterior / siguiente -->
         <div class="controls-row">
           <button class="btn-clean" id="btnYearPrev">⟵ Año anterior</button>
           <button class="btn-clean" id="btnYearNext">Año siguiente ⟶</button>
@@ -136,14 +144,24 @@
         <div class="controls-row">
           <button class="btn-clean" id="btnMonthPrev">⟵ Mes anterior</button>
           <select id="selMonth" class="btn-clean" style="background:#101318; border-radius:8px;">
-            <option value="1">Enero</option><option value="2">Febrero</option><option value="3">Marzo</option>
-            <option value="4">Abril</option><option value="5">Mayo</option><option value="6">Junio</option>
-            <option value="7">Julio</option><option value="8">Agosto</option><option value="9">Septiembre</option>
-            <option value="10">Octubre</option><option value="11">Noviembre</option><option value="12">Diciembre</option>
+            <option value="1">Enero</option>
+            <option value="2">Febrero</option>
+            <option value="3">Marzo</option>
+            <option value="4">Abril</option>
+            <option value="5">Mayo</option>
+            <option value="6">Junio</option>
+            <option value="7">Julio</option>
+            <option value="8">Agosto</option>
+            <option value="9">Septiembre</option>
+            <option value="10">Octubre</option>
+            <option value="11">Noviembre</option>
+            <option value="12">Diciembre</option>
           </select>
           <button class="btn-clean" id="btnMonthNext">Mes siguiente ⟶</button>
         </div>
-        <div style="opacity:.75; font-weight:600;">Periodo: <span id="lblPeriodo">—</span></div>
+        <div style="opacity:.75; font-weight:600;">
+          Periodo: <span id="lblPeriodo">—</span>
+        </div>
       </div>
 
       <!-- Cuerpo: Mapa + Métricas -->
@@ -156,20 +174,58 @@
 
         <!-- Métricas -->
         <div class="metric-grid-clean">
-          <div class="data-panel-clean warm-bg"><span>T° MÁX PROMEDIO</span><span id="temp_max_avg" class="metric-value-clean">--</span><span class="unit">°C</span></div>
-          <div class="data-panel-clean cold-bg"><span>T° MÍN PROMEDIO</span><span id="temp_min_avg" class="metric-value-clean">--</span><span class="unit">°C</span></div>
-          <div class="data-panel-clean rain-bg"><span>PRECIPITACIÓN SUMA</span><span id="precip_sum" class="metric-value-clean">--</span><span class="unit">mm</span></div>
-          <div class="data-panel-clean moisture-bg"><span>HUMEDAD MÁXIMA</span><span id="humidity_max_abs" class="metric-value-clean">--</span><span class="unit">%</span></div>
-          <div class="data-panel-clean wind-bg"><span>VIENTO MÁXIMO</span><span id="wind_max" class="metric-value-clean">--</span><span class="unit">km/h</span></div>
-          <div class="data-panel-clean sun-bg"><span>RADIACIÓN SOLAR</span><span id="radiation_sum" class="metric-value-clean">--</span><span class="unit">J/m²</span></div>
-          <div class="data-panel-clean extreme-bg"><span>T° MÁX ABSOLUTA</span><span id="temp_max_abs" class="metric-value-clean">--</span><span class="unit">°C</span></div>
-          <div class="data-panel-clean cold-bg"><span>T° MÍN ABSOLUTA</span><span id="temp_min_abs" class="metric-value-clean">--</span><span class="unit">°C</span></div>
-          <div class="data-panel-clean info-bg"><span>DÍAS EN EL PERÍODO</span><span id="num_dias" class="metric-value-clean">--</span><span class="unit">días</span></div>
+          <div class="data-panel-clean warm-bg">
+            <span>T° MÁX PROMEDIO</span>
+            <span id="temp_max_avg" class="metric-value-clean">--</span>
+            <span class="unit">°C</span>
+          </div>
+          <div class="data-panel-clean cold-bg">
+            <span>T° MÍN PROMEDIO</span>
+            <span id="temp_min_avg" class="metric-value-clean">--</span>
+            <span class="unit">°C</span>
+          </div>
+          <div class="data-panel-clean rain-bg">
+            <span>PRECIPITACIÓN SUMA</span>
+            <span id="precip_sum" class="metric-value-clean">--</span>
+            <span class="unit">mm</span>
+          </div>
+          <div class="data-panel-clean moisture-bg">
+            <span>HUMEDAD MÁXIMA</span>
+            <span id="humidity_max_abs" class="metric-value-clean">--</span>
+            <span class="unit">%</span>
+          </div>
+          <div class="data-panel-clean wind-bg">
+            <span>VIENTO MÁXIMO</span>
+            <span id="wind_max" class="metric-value-clean">--</span>
+            <span class="unit">km/h</span>
+          </div>
+          <div class="data-panel-clean sun-bg">
+            <span>RADIACIÓN SOLAR</span>
+            <span id="radiation_sum" class="metric-value-clean">--</span>
+            <span class="unit">J/m²</span>
+          </div>
+          <div class="data-panel-clean extreme-bg">
+            <span>T° MÁX ABSOLUTA</span>
+            <span id="temp_max_abs" class="metric-value-clean">--</span>
+            <span class="unit">°C</span>
+          </div>
+          <div class="data-panel-clean cold-bg">
+            <span>T° MÍN ABSOLUTA</span>
+            <span id="temp_min_abs" class="metric-value-clean">--</span>
+            <span class="unit">°C</span>
+          </div>
+          <div class="data-panel-clean info-bg">
+            <span>DÍAS EN EL PERÍODO</span>
+            <span id="num_dias" class="metric-value-clean">--</span>
+            <span class="unit">días</span>
+          </div>
         </div>
       </div>
 
       <div class="footer-spacer"></div>
-      <a href="{% url 'consulta_clima' %}" class="back-button">← Volver a Nueva Consulta</a>
+      <a href="{% url 'consulta_clima' %}" class="back-button">
+        ← Volver a Nueva Consulta
+      </a>
 
     </div>
   </div>
@@ -181,15 +237,17 @@
     const REGION_NAME = "{{ data.region_nombre }}";
     const LAT = {{ data.lat|floatformat:"6" }};
     const LON = {{ data.lon|floatformat:"6" }};
-    let curYear = {{ current_year }};
+    let   curYear   = {{ current_year }};
     const LIMIT_END = "{{ limit_date }}"; // YYYY-MM-DD
-    const MIN_YEAR = 1950;
-    const MAX_YEAR = 2025;
+    const MIN_YEAR  = 1950;
+    const MAX_YEAR  = 2025;
+
     /* ---------- MAPA ---------- */
     (function initMap(){
       const map = L.map('map', {zoomControl:true}).setView([LAT, LON], 6);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 18, attribution: '&copy; OpenStreetMap'
+        maxZoom: 18,
+        attribution: '&copy; OpenStreetMap'
       }).addTo(map);
       const marker = L.marker([LAT, LON]).addTo(map);
       marker.bindPopup(`${REGION_NAME}`).openPopup();
@@ -202,16 +260,17 @@
       if(!el) return;
       el.textContent = (v === null || v === undefined) ? '--' : v;
     }
+
     function paintMetrics(m){
-      setMetric('temp_max_avg', m.temp_max_avg);
-      setMetric('temp_min_avg', m.temp_min_avg);
-      setMetric('precip_sum', m.precip_sum);
-      setMetric('wind_max', m.wind_max);
-      setMetric('radiation_sum', m.radiation_sum);
-      setMetric('temp_max_abs', m.temp_max_abs);
-      setMetric('temp_min_abs', m.temp_min_abs);
-      setMetric('humidity_max_abs', m.humidity_max_abs);
-      setMetric('num_dias', m.num_dias);
+      setMetric('temp_max_avg',      m.temp_max_avg);
+      setMetric('temp_min_avg',      m.temp_min_avg);
+      setMetric('precip_sum',        m.precip_sum);
+      setMetric('wind_max',          m.wind_max);
+      setMetric('radiation_sum',     m.radiation_sum);
+      setMetric('temp_max_abs',      m.temp_max_abs);
+      setMetric('temp_min_abs',      m.temp_min_abs);
+      setMetric('humidity_max_abs',  m.humidity_max_abs);
+      setMetric('num_dias',          m.num_dias);
     }
 
     async function callArchive(year, month){ // month: 0=anual; 1..12=mensual
@@ -220,7 +279,8 @@
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           region_code: REGION_CODE,
-          year, month,
+          year:  year,
+          month: month,
           is_forecast:false,
           period_end: LIMIT_END
         })
@@ -229,104 +289,127 @@
       return res.json();
     }
 
+    // --------- CARGA POR AÑO ---------
     async function loadYear(y){
-      // Actualizamos la variable global
       curYear = y;
 
-      // Reflejamos el año en el input
       const input = document.getElementById('inputYear');
       if(input) input.value = curYear;
 
-      // Llamamos a la API igual que antes
       const r = await callArchive(y, 0);
       if(r?.success){
         paintMetrics(r.metrics);
         const lbl = document.getElementById('lblPeriodo');
         if(lbl) lbl.textContent = r.periodo_label || `Anual (${y})`;
-  }
+      }
+      updateYearButtons();
+    }
 
-  updateYearButtons();
-}
+    // --------- CARGA POR MES ---------
+    async function loadMonth(m){
+      // usa siempre el año actual almacenado en curYear
+      const r = await callArchive(curYear, m);
+      if(r?.success){
+        paintMetrics(r.metrics);
+        const lbl = document.getElementById('lblPeriodo');
+        if(lbl) lbl.textContent = r.periodo_label || `Mes ${m}`;
+      }
+      updateYearButtons();
+    }
 
     /* ---------- MODO ---------- */
-    const btnModeYear = document.getElementById('btnModeYear');
-    const btnModeMonth = document.getElementById('btnModeMonth');
-    const controlsYear = document.getElementById('controlsYear');
+    const btnModeYear   = document.getElementById('btnModeYear');
+    const btnModeMonth  = document.getElementById('btnModeMonth');
+    const controlsYear  = document.getElementById('controlsYear');
     const controlsMonth = document.getElementById('controlsMonth');
 
     function setMode(mode){
-      if(mode==='year'){
-        btnModeYear.classList.add('active'); btnModeMonth.classList.remove('active');
-        controlsYear.style.display='block'; controlsMonth.style.display='none';
+      if(mode === 'year'){
+        btnModeYear.classList.add('active');
+        btnModeMonth.classList.remove('active');
+        controlsYear.style.display  = 'block';
+        controlsMonth.style.display = 'none';
         loadYear(curYear);
       } else {
-        btnModeMonth.classList.add('active'); btnModeYear.classList.remove('active');
-        controlsMonth.style.display='block'; controlsYear.style.display='none';
+        btnModeMonth.classList.add('active');
+        btnModeYear.classList.remove('active');
+        controlsMonth.style.display = 'block';
+        controlsYear.style.display  = 'none';
         const sel = document.getElementById('selMonth');
-        loadMonth(parseInt(sel.value||'1',10));
+        loadMonth(parseInt(sel.value || '1', 10));
       }
     }
 
-    btnModeYear.onclick = ()=> setMode('year');
-    btnModeMonth.onclick = ()=> setMode('month');
+    btnModeYear.onclick  = () => setMode('year');
+    btnModeMonth.onclick = () => setMode('month');
 
-    /* ---------- EVENTOS ---------- */
+    /* ---------- EVENTOS AÑO ---------- */
     const btnYearPrev = document.getElementById('btnYearPrev');
     const btnYearNext = document.getElementById('btnYearNext');
 
     function updateYearButtons(){
-      const btnYearPrev = document.getElementById('btnYearPrev');
-      const btnYearNext = document.getElementById('btnYearNext');
-      const inputYear = document.getElementById('inputYear');
+      const btnYearPrevLocal = document.getElementById('btnYearPrev');
+      const btnYearNextLocal = document.getElementById('btnYearNext');
+      const inputYearLocal   = document.getElementById('inputYear');
 
-      if(btnYearNext) btnYearNext.disabled = (curYear >= MAX_YEAR);
-      if(btnYearPrev) btnYearPrev.disabled = (curYear <= MIN_YEAR);
+      if(btnYearNextLocal) btnYearNextLocal.disabled = (curYear >= MAX_YEAR);
+      if(btnYearPrevLocal) btnYearPrevLocal.disabled = (curYear <= MIN_YEAR);
 
       // Mantener el input sincronizado
-      if(inputYear && inputYear.value !== String(curYear)){
-        inputYear.value = curYear;
-  }
-}
-// Input manual de año
-const inputYear = document.getElementById('inputYear');
-
-if(inputYear){
-  inputYear.addEventListener('change', ()=>{
-      let y = parseInt(inputYear.value, 10);
-      if(isNaN(y)) return;
-
-      y = Math.max(MIN_YEAR, Math.min(MAX_YEAR, y));
-      inputYear.value = y;
-
-      curYear = y;
-      setMode('year');
-      updateYearButtons();
-  });
-
-  inputYear.addEventListener('input', ()=>{
-      if(inputYear.value.length > 4){
-          inputYear.value = inputYear.value.slice(0,4);
+      if(inputYearLocal && inputYearLocal.value !== String(curYear)){
+        inputYearLocal.value = curYear;
       }
-  });
-}
+    }
 
+    // Input manual de año
+    const inputYear = document.getElementById('inputYear');
 
+    if(inputYear){
+      inputYear.addEventListener('change', ()=>{
+        let y = parseInt(inputYear.value, 10);
+        if(isNaN(y)) return;
 
-    btnYearPrev.onclick = ()=>{ curYear--; setMode('year'); };
+        y = Math.max(MIN_YEAR, Math.min(MAX_YEAR, y));
+        inputYear.value = y;
+
+        curYear = y;
+        setMode('year');
+        updateYearButtons();
+      });
+
+      inputYear.addEventListener('input', ()=>{
+        if(inputYear.value.length > 4){
+          inputYear.value = inputYear.value.slice(0,4);
+        }
+      });
+    }
+
+    btnYearPrev.onclick = ()=>{
+      curYear--;
+      setMode('year');
+    };
+
     btnYearNext.onclick = ()=>{
-      if(curYear < MAX_YEAR){ curYear++; setMode('year'); }
+      if(curYear < MAX_YEAR){
+        curYear++;
+        setMode('year');
+      }
       updateYearButtons();
     };
 
+    /* ---------- EVENTOS MES ---------- */
     const selMonth = document.getElementById('selMonth');
+
     document.getElementById('btnMonthPrev').onclick = ()=>{
-      selMonth.value = Math.max(1, (parseInt(selMonth.value,10)||1) - 1);
+      selMonth.value = Math.max(1, (parseInt(selMonth.value,10) || 1) - 1);
       loadMonth(parseInt(selMonth.value,10));
     };
+
     document.getElementById('btnMonthNext').onclick = ()=>{
-      selMonth.value = Math.min(12, (parseInt(selMonth.value,10)||1) + 1);
+      selMonth.value = Math.min(12, (parseInt(selMonth.value,10) || 1) + 1);
       loadMonth(parseInt(selMonth.value,10));
     };
+
     selMonth.onchange = ()=> loadMonth(parseInt(selMonth.value,10));
 
     /* ---------- INICIO ---------- */
