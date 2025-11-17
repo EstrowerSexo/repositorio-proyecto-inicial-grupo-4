@@ -99,7 +99,7 @@
       <div class="header-detalle">
         <h1>CLIMA CHILE - Resultados Detalle</h1>
         <div class="subtitle">
-          Análisis Histórico - Región de {{ data.region_nombre }} ({{ current_year }})
+          Análisis Histórico - Región de {{ data.region_nombre }} (<span id="yearTitle">{{ current_year }}</span>)
         </div>
       </div>
 
@@ -242,6 +242,12 @@
     const MIN_YEAR  = 1950;
     const MAX_YEAR  = 2025;
 
+    function updateTitleYear() {
+    const el = document.getElementById('yearTitle');
+    if (el) el.textContent = curYear;
+}
+
+
     /* ---------- MAPA ---------- */
     (function initMap(){
       const map = L.map('map', {zoomControl:true}).setView([LAT, LON], 6);
@@ -292,6 +298,7 @@
     // --------- CARGA POR AÑO ---------
     async function loadYear(y){
       curYear = y;
+      updateTitleYear();
 
       const input = document.getElementById('inputYear');
       if(input) input.value = curYear;
@@ -387,12 +394,14 @@
     btnYearPrev.onclick = ()=>{
       curYear--;
       setMode('year');
+      updateTitleYear();
     };
 
     btnYearNext.onclick = ()=>{
       if(curYear < MAX_YEAR){
         curYear++;
         setMode('year');
+        updateTitleYear();
       }
       updateYearButtons();
     };
