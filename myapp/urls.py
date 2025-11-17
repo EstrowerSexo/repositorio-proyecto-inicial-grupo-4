@@ -26,5 +26,5 @@ urlpatterns = [
     path('fetch_pronostico_ajax/', fetch_pronostico_ajax, name='fetch_pronostico_ajax'),
     
     # La lógica de Evolución Histórica (Gráficos)
-    path('fetch_evolucion_ajax/', fetch_evolucion_ajax, name='fetch_evolucion_ajax'),
+    path('fetch_evolucion_ajax/', views.fetch_evolucion_ajax, name='fetch_evolucion_ajax'),
 ]
