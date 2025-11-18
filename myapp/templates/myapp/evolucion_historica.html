@@ -100,25 +100,34 @@
         /* initMap() ELIMINADO */
 
         /* ---------- LÓGICA DE GRÁFICOS ---------- */
-        
+    
         function createChart(canvasId, label, labels_x, data_y, color) {
             const el = document.getElementById(canvasId);
-            if (!el) {
-                console.error(`Error: No se encontró el canvas con id: ${canvasId}`);
-                return;
-            }
+            
+            // --- ARREGLO CLAVE: Definir el contexto ---
+            if (!el) { return; } 
             const ctx = el.getContext('2d');
-            new Chart(ctx, {
-                type: 'scatter', 
+            if (!ctx) { return; } 
+            // ----------------------------------------
+
+            // Buena práctica: Destruir el gráfico viejo antes de dibujar uno nuevo
+            if (el.chart) {
+                el.chart.destroy();
+            }
+
+            // 🛑 CORRECCIÓN: Usar 'line' y 'category' ya están en tu código, ¡BIEN!
+            el.chart = new Chart(ctx, { 
+                type: 'line', 
                 data: {
                     labels: labels_x,
                     datasets: [{
                         label: label,
-                        data: data_y.map((value, index) => ({ x: labels_x[index], y: value })),
-                        backgroundColor: color,
-                        borderColor: color,
-                        showLine: false,
-                        pointRadius: 4,
+                        data: data_y, 
+                        backgroundColor: color.replace('0.8', '0.2'), // Fondo claro
+                        borderColor: color.replace('0.8', '1'), // Borde sólido
+                        tension: 0.1, 
+                        pointRadius: 3, 
+                        fill: true, // Rellenar área para mejor visualización
                     }]
                 },
                 options: {
@@ -128,6 +137,7 @@
                     },
                     scales: {
                         x: {
+                            type: 'category', 
                             title: { display: true, text: 'Año' }
                         },
                         y: {

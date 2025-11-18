@@ -6,8 +6,9 @@ from django.urls import path
 from . import views 
 
 # 🆕 Importar las funciones de lógica desde los nuevos módulos
-from .logica_resultado import fetch_clima_data_ajax, fetch_evolucion_ajax
+from .logica_resultado import fetch_clima_data_ajax
 from .logica_pronostico import fetch_pronostico_ajax 
+from .logica_evolucion import fetch_evolucion_ajax
 
 # La variable 'urlpatterns' es obligatoria en Django para definir las rutas.
 urlpatterns = [
@@ -26,5 +27,5 @@ urlpatterns = [
     path('fetch_pronostico_ajax/', fetch_pronostico_ajax, name='fetch_pronostico_ajax'),
     
     # La lógica de Evolución Histórica (Gráficos)
-    path('fetch_evolucion_ajax/', views.fetch_evolucion_ajax, name='fetch_evolucion_ajax'),
+    path('fetch_evolucion_ajax/', fetch_evolucion_ajax, name='fetch_evolucion_ajax'),
 ]
