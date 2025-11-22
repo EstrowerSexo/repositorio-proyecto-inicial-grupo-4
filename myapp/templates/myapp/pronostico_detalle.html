@@ -70,7 +70,11 @@
         <h1>CLIMA CHILE - Pronóstico y Datos Recientes</h1>
         <div class="subtitle">Análisis Diario - Región de {{ data.region_nombre }}</div>
       </div>
-
+      
+      <img src="{% static 'img/logo.png' %}" 
+      alt="logo" 
+      style="position:absolute; top:0px; right:67px; width:190px; opacity:0.92; z-index:1000;">
+      
       <!-- Barra de modo (Año/Mes llevan a resultados; Pronóstico activo) -->
       <div class="controls-row" style="justify-content:space-between;">
           <div class="mode-switch">

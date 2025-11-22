@@ -5,7 +5,16 @@
 	box-sizing: border-box;
 	font-family: 'Montserrat', sans-serif; /* Se usa la fuente importada en el HTML */
 }
-
+/* Logo superior derecha */
+.top-logo {
+    position: absolute;
+    top: 10px;           /* Más arriba o abajo */
+    right: 20px;         /* Más a la derecha */
+    width: 120px;        /* Aumenta tamaño */
+    height: auto;
+    opacity: 0.95;       /* Queda bonito ligeramente suave */
+    z-index: 2000;       /* Siempre por encima de todo */
+}
 /* Estilo del Fondo */
 body {
 	height: 100vh;
